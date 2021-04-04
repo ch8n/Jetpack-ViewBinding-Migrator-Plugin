@@ -1,10 +1,9 @@
+import Themes.*
 import androidx.compose.desktop.Window
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Text
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,42 +15,58 @@ import androidx.compose.ui.window.Dialog
 
 fun main() = Window(
     title = "ViewBinder Wizard | AndroidBites",
-    size = IntSize(800, 720),
+    size = IntSize(1152, 700),
     resizable = false,
     centered = true,
 ) {
-    MaterialTheme {
+    ViewBinderTheme {
         WelcomeScreen()
     }
 }
 
 @Composable
 fun WelcomeScreen() {
+    Surface(
+        color = Primary,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Column(
+            Modifier.fillMaxSize(),
+        ) {
+            Image(
+                bitmap = imageResource("images/logo2.png"),
+                contentDescription = "logo",
+                modifier = Modifier.height(dp120).padding(dp16)
+            )
 
-    Image(
-        bitmap = imageResource("images/logo2.png"),
-        contentDescription = "logo",
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.Black)
-            .height(120.dp)
-            .padding(16.dp)
-    )
+            Box(
+                modifier = Modifier
+                    .background(Secondary)
+                    .fillMaxWidth()
+                    .fillMaxSize(0.9f)
+            ) { }
 
-    Column(Modifier.fillMaxSize()) {
+            Row {
+                OutlinedButton(
+                    onClick = { },
+                ) {
+                    Text("Buy me a coffee?")
+                }
 
-        val dialogState = remember { mutableStateOf(false) }
+                OutlinedButton(
+                    onClick = { },
+                ) {
+                    Text("finish")
+                }
 
-        Button(onClick = { dialogState.value = true }) {
-            Text(text = "Open dialog")
-        }
-
-        if (dialogState.value) {
-            Dialog(
-                onDismissRequest = { dialogState.value = false }
-            ) {
-                // Dialog's content
+                OutlinedButton(
+                    onClick = { },
+                ) {
+                    Text("next")
+                }
             }
+
         }
     }
+
 }

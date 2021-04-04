@@ -1,18 +1,17 @@
 package Themes
 
 import androidx.compose.material.Typography
-import androidx.compose.ui.input.key.Key.Companion.R
+
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.platform.Font
 
-//TODO fix fonts
 val Poppins = FontFamily(
-    Font(R.font.poppins_regular, FontWeight.Normal),
-    Font(R.font.poppins_bold, FontWeight.Bold),
-    Font(R.font.poppins_medium, FontWeight.Medium),
-    Font(R.font.poppins_semibold, FontWeight.SemiBold)
+    Font("font/poppins_regular.otf", FontWeight.Normal),
+    Font("font/poppins_bold.otf", FontWeight.Bold),
+    Font("font/poppins_medium.otf", FontWeight.Medium),
+    Font("font/poppins_semibold.otf", FontWeight.SemiBold),
 )
 
 val Typography = Typography(

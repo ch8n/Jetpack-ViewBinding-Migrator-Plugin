@@ -13,6 +13,7 @@ val dp20 = 20.dp
 val dp24 = 24.dp
 val dp36 = 36.dp
 val dp48 = 48.dp
+val dp120 = 120.dp
 val dp200 = 200.dp
 val dp250 = 250.dp
 val dp400 = 400.dp
