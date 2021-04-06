@@ -167,7 +167,9 @@ class ActivityManager(private val context: FrameworkContext) {
 
     fun <T : Activity> createActivity(intent: Intent<T>) {
         val activity: Activity = intent.targetActivity.createInstance()
-        pauseVisibleActivity()
+        if (_backStack.size > 1) {
+            pauseVisibleActivity()
+        }
         _backStack.add(activity)
         activity.frameworkContext = context
         activity.extra = intent.bundle
