@@ -15,7 +15,7 @@ import androidx.compose.ui.window.Dialog
 
 fun main() = Window(
     title = "ViewBinder Wizard | AndroidBites",
-    size = IntSize(1152, 700),
+    size = IntSize(800, 450),
     resizable = false,
     centered = true,
 ) {
@@ -36,14 +36,16 @@ fun WelcomeScreen() {
             Image(
                 bitmap = imageResource("images/logo2.png"),
                 contentDescription = "logo",
-                modifier = Modifier.height(dp120).padding(dp16)
+                modifier = Modifier.fillMaxWidth(0.4f).height(dp120).padding(dp16)
             )
 
             Box(
                 modifier = Modifier
                     .background(Secondary)
-                    .fillMaxWidth()
-                    .fillMaxSize(0.9f)
+                    .fillMaxWidth(0.8f)
+                    .padding(dp24)
+                    .fillMaxHeight(0.8f)
+                    .padding(dp24)
             ) { }
 
             Row {
