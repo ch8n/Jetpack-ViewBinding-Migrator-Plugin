@@ -1,5 +1,4 @@
 import org.jetbrains.compose.compose
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -20,7 +19,8 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3")
     implementation(kotlin("reflect"))
-
+    implementation("com.arkivanov.decompose:decompose:0.2.1")
+    implementation("com.arkivanov.decompose:extensions-compose-jetbrains:0.2.1")
 }
 
 tasks.withType<KotlinCompile>() {
