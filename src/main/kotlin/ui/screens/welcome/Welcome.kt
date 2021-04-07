@@ -9,7 +9,6 @@ import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -23,35 +22,19 @@ import framework.component.functional.ViewModel
 import ui.navigation.AppNavigationController
 
 class WelcomeScreenNavigationComponent(
-    componentContext: ComponentContext,
-    private val navigator: AppNavigationController
+    private val componentContext: ComponentContext,
 ) : NavigationComponent, ComponentContext by componentContext {
-
-    private val welcomeViewModel by lazy { WelcomeViewModel() }
 
     @Composable
     override fun render() {
-        val scope = rememberCoroutineScope()
 
-        LaunchedEffect(welcomeViewModel) {
-            welcomeViewModel.init(scope)
-            welcomeViewModel.syncData()
-        }
-
-        WelcomeScreenUI(
-            welcomeViewModel = welcomeViewModel,
-            navigator = navigator
-        )
+        WelcomeScreenUI()
     }
 }
 
 @Composable
-fun WelcomeScreenUI(
-    welcomeViewModel: WelcomeViewModel,
-    navigator: AppNavigationController
-) {
+fun WelcomeScreenUI() {
 
-    val isSyncFinished = welcomeViewModel.isSyncFinished.collectAsState()
     // todo create UI
     Surface(
         color = Primary,
@@ -119,9 +102,4 @@ fun WelcomeScreenUI(
     }
 }
 
-class WelcomeViewModel() : ViewModel() {
-    override fun syncData() {
-        _isSyncFinished.value = true
-    }
-}
 

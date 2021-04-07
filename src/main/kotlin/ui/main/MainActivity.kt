@@ -33,11 +33,7 @@ class MainActivity : Activity() {
         centered = true,
     ) {
         ViewBinderTheme {
-            rememberRootComponent { componentContext ->
-                NavHostNavigationComponent(
-                    componentContext = componentContext
-                )
-            }
+            rememberRootComponent(factory = ::NavHostNavigationComponent).render()
         }
     }
 }

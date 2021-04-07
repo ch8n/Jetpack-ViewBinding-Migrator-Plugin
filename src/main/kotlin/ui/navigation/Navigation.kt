@@ -31,7 +31,7 @@ class NavHostNavigationComponent(
     private val appNavigator = object : AppNavigationController {
 
         override fun toSplashScreen() {
-            router.replaceCurrent(Screens.Splash)
+            router.push(Screens.Splash)
         }
 
         override fun toWelcomeScreen() {
@@ -67,8 +67,7 @@ class NavHostNavigationComponent(
     ): NavigationComponent {
         return when (screens) {
             is Screens.Splash -> SplashScreenNavigationComponent(
-                componentContext = componentContext,
-                navigator = appNavigator
+                componentContext = componentContext
             )
             is Screens.Welcome -> WelcomeScreenNavigationComponent(
                 componentContext = componentContext,

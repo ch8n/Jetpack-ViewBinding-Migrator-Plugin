@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
+// todo make lifecycle aware
 abstract class ViewModel {
 
     protected lateinit var viewModelScope: CoroutineScope
