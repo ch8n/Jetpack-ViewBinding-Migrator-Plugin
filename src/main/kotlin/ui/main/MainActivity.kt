@@ -16,7 +16,9 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.arkivanov.decompose.extensions.compose.jetbrains.rememberRootComponent
 import framework.Activity
+import ui.navigation.NavHostNavigationComponent
 
 class MainActivity : Activity() {
     override fun onCreate() {
@@ -31,76 +33,11 @@ class MainActivity : Activity() {
         centered = true,
     ) {
         ViewBinderTheme {
-            WelcomeScreen()
+            rememberRootComponent { componentContext ->
+                NavHostNavigationComponent(
+                    componentContext = componentContext
+                )
+            }
         }
     }
-}
-
-@Composable
-fun WelcomeScreen() {
-    Surface(
-        color = Primary,
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Column(
-            Modifier.fillMaxSize(),
-        ) {
-            Image(
-                bitmap = imageResource("images/logo2.png"),
-                contentDescription = "logo",
-                modifier = Modifier.fillMaxWidth(0.4f).height(dp120).padding(dp16)
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.8f),
-                contentAlignment = Alignment.Center
-            ) {
-
-                Box(
-                    modifier = Modifier
-                        .border(width = dp2, color = White1, shape = RectangleShape)
-                        .background(Secondary)
-                        .fillMaxSize(0.92f)
-                        .padding(horizontal = dp24)
-                ) {
-
-
-                }
-
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = dp48),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                OutlinedButton(
-                    modifier = Modifier.height(46.dp).padding(horizontal = dp8),
-                    onClick = { },
-                ) {
-                    Text("Buy me a coffee?")
-                }
-
-                Row() {
-
-                    OutlinedButton(
-                        modifier = Modifier.width(152.dp).height(46.dp).padding(horizontal = dp8),
-                        onClick = { },
-                    ) {
-                        Text("Exit")
-                    }
-
-                    OutlinedButton(
-                        modifier = Modifier.width(152.dp).height(46.dp).padding(horizontal = dp8),
-                        onClick = { },
-                    ) {
-                        Text("next")
-                    }
-                }
-            }
-
-        }
-    }
-
 }

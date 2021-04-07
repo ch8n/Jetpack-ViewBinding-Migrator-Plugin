@@ -6,6 +6,7 @@ import com.arkivanov.decompose.extensions.compose.jetbrains.Children
 import com.arkivanov.decompose.statekeeper.Parcelable
 import framework.component.functional.NavigationComponent
 import ui.screens.splash.SplashScreenNavigationComponent
+import ui.screens.welcome.WelcomeScreenNavigationComponent
 
 
 class NavHostNavigationComponent(
@@ -69,7 +70,10 @@ class NavHostNavigationComponent(
                 componentContext = componentContext,
                 navigator = appNavigator
             )
-            is Screens.Welcome -> TODO()
+            is Screens.Welcome -> WelcomeScreenNavigationComponent(
+                componentContext = componentContext,
+                navigator = appNavigator
+            )
             is Screens.ProjectPath -> TODO()
             is Screens.SelectModules -> TODO()
             is Screens.Migration -> TODO()
