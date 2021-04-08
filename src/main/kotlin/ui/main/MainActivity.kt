@@ -21,6 +21,7 @@ import framework.Activity
 import ui.navigation.NavHostNavigationComponent
 
 class MainActivity : Activity() {
+
     override fun onCreate() {
         super.onCreate()
         setContentView()
