@@ -37,7 +37,7 @@ class SplashScreenNavigationComponent(
         val scope = rememberCoroutineScope()
         LaunchedEffect(splashViewModel) {
             splashViewModel.init(scope)
-            splashViewModel.startTimer(5000) {
+            splashViewModel.startTimer(1000) {
                 navigateToHome.invoke()
             }
         }

@@ -67,7 +67,9 @@ class NavHostNavigationComponent(
                 ::toWelcomeScreen
             )
             is Screens.Welcome -> WelcomeScreenNavigationComponent(
-                componentContext = componentContext
+                componentContext = componentContext,
+                ::toProjectPathScreen,
+                ::toWelcomeScreen
             )
             is Screens.ProjectPath -> TODO()
             is Screens.SelectModules -> TODO()
