@@ -18,8 +18,7 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ComponentContext
 import framework.component.functional.NavigationComponent
-import framework.component.functional.ViewModel
-import ui.navigation.AppNavigationController
+
 
 class WelcomeScreenNavigationComponent(
     private val componentContext: ComponentContext,

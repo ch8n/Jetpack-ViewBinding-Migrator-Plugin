@@ -1,9 +1,10 @@
 import org.jetbrains.compose.compose
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
-    kotlin("jvm") version "1.4.31"
-    id("org.jetbrains.compose") version "0.4.0-build178"
+    kotlin("jvm") version "1.4.32"
+    id("org.jetbrains.compose") version "0.4.0-build180"
 }
 
 group = "ch8n.androidbites.viewbinder"
@@ -19,6 +20,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3")
     implementation(kotlin("reflect"))
+    // Decompose : Decompose
     implementation("com.arkivanov.decompose:decompose:0.2.1")
     implementation("com.arkivanov.decompose:extensions-compose-jetbrains:0.2.1")
 }
@@ -31,7 +33,7 @@ compose.desktop {
     application {
         mainClass = "MainKt"
         nativeDistributions {
-            //targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "ViewBinderWizard"
         }
     }

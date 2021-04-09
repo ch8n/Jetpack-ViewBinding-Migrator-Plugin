@@ -1,5 +1,6 @@
 package ui.navigation
 
+
 import androidx.compose.runtime.Composable
 import com.arkivanov.decompose.*
 import com.arkivanov.decompose.extensions.compose.jetbrains.Children
@@ -24,42 +25,37 @@ class NavHostNavigationComponent(
     }
 
     private val router = router<Screens, NavigationComponent>(
+        childFactory = ::createNavigationScreenComponent,
         initialConfiguration = Screens.Splash,
-        childFactory = ::createNavigationScreenComponent
     )
 
-    private val appNavigator = object : AppNavigationController {
-
-        override fun toSplashScreen() {
-            router.push(Screens.Splash)
-        }
-
-        override fun toWelcomeScreen() {
-            router.push(Screens.Welcome)
-        }
-
-        override fun toProjectPathScreen() {
-            router.push(Screens.ProjectPath)
-        }
-
-        override fun toSelectModulesScreen() {
-            router.push(Screens.SelectModules)
-        }
-
-        override fun toMigrationScreen() {
-            router.push(Screens.Migration)
-        }
-
-        override fun toUpdateScreen() {
-            router.push(Screens.Update)
-        }
-
-        override fun onBackClicked() {
-            router.pop()
-        }
-
+    fun toSplashScreen() {
+        router.push(NavHostNavigationComponent.Screens.Splash)
     }
 
+    fun toWelcomeScreen() {
+        router.push(NavHostNavigationComponent.Screens.Welcome)
+    }
+
+    fun toProjectPathScreen() {
+        router.push(NavHostNavigationComponent.Screens.ProjectPath)
+    }
+
+    fun toSelectModulesScreen() {
+        router.push(NavHostNavigationComponent.Screens.SelectModules)
+    }
+
+    fun toMigrationScreen() {
+        router.push(NavHostNavigationComponent.Screens.Migration)
+    }
+
+    fun toUpdateScreen() {
+        router.push(NavHostNavigationComponent.Screens.Update)
+    }
+
+    fun onBackClicked() {
+        router.pop()
+    }
 
     private fun createNavigationScreenComponent(
         screens: Screens,
@@ -67,7 +63,8 @@ class NavHostNavigationComponent(
     ): NavigationComponent {
         return when (screens) {
             is Screens.Splash -> SplashScreenNavigationComponent(
-                componentContext = componentContext
+                componentContext = componentContext,
+                ::toWelcomeScreen
             )
             is Screens.Welcome -> WelcomeScreenNavigationComponent(
                 componentContext = componentContext
@@ -88,15 +85,4 @@ class NavHostNavigationComponent(
     }
 
 }
-
-interface AppNavigationController {
-    fun toSplashScreen()
-    fun toWelcomeScreen()
-    fun toProjectPathScreen()
-    fun toSelectModulesScreen()
-    fun toMigrationScreen()
-    fun toUpdateScreen()
-    fun onBackClicked()
-}
-
 
