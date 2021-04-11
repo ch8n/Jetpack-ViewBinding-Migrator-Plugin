@@ -8,13 +8,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.imageResource
 import com.arkivanov.decompose.ComponentContext
 import framework.component.functional.NavigationComponent
 import framework.component.functional.ViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import ui.navigation.AppNavigationController
 
 class SplashScreenNavigationComponent(
@@ -29,35 +30,21 @@ class SplashScreenNavigationComponent(
         val scope = rememberCoroutineScope()
         LaunchedEffect(splashViewModel) {
             splashViewModel.init(scope)
-            splashViewModel.syncData()
+            splashViewModel.syncData {
+                navigator.toWelcomeScreen()
+            }
         }
 
         SplashScreenUI(
             splashViewModel = splashViewModel,
-            navigator = navigator
         )
     }
 }
 
 @Composable
 fun SplashScreenUI(
-    splashViewModel: SplashViewModel,
-    navigator: AppNavigationController
+    splashViewModel: SplashViewModel
 ) {
-
-    val isSyncFinished = splashViewModel.isSyncFinished.collectAsState()
-    val shouldUpdate = splashViewModel.shouldUpdate.collectAsState()
-
-//    if (shouldUpdate.value) {
-//        navigator.toUpdateScreen()
-//        return
-//    }
-
-    if (isSyncFinished.value) {
-        navigator.toWelcomeScreen()
-        return
-    }
-
     // todo create UI
     Surface(
         color = Primary,
@@ -76,8 +63,11 @@ fun SplashScreenUI(
 }
 
 class SplashViewModel() : ViewModel() {
-    override fun syncData() {
-        _isSyncFinished.value = true
+    override fun syncData(function: () -> Unit) {
+        viewModelScope.launch {
+            delay(1000)
+            function.invoke()
+        }
     }
 }
 

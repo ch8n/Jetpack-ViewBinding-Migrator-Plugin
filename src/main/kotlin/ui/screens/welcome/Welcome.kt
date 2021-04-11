@@ -120,7 +120,7 @@ fun WelcomeScreenUI(
 }
 
 class WelcomeViewModel() : ViewModel() {
-    override fun syncData() {
+    override fun syncData(function: () -> Unit) {
         _isSyncFinished.value = true
     }
 }

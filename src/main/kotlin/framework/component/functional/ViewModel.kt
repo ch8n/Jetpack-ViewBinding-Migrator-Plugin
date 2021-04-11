@@ -33,5 +33,5 @@ abstract class ViewModel {
         viewModelScope = defaultScope
     }
 
-    abstract fun syncData()
+    abstract fun syncData(function: () -> Unit)
 }
