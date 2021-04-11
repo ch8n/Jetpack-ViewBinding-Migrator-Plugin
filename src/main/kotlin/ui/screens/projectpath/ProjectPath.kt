@@ -21,11 +21,13 @@ import com.arkivanov.decompose.ComponentContext
 import framework.Timber
 import framework.component.functional.NavigationComponent
 import framework.component.functional.ViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import ui.screens.welcome.ErrorDialog
 import java.io.File
 
 object DataStore {
-    var projectPath = ""
+    var projectPath = "/Users/chetangupta/StudioProjects/ColorChetan"
     var errorMessage = ""
 }
 
@@ -65,6 +67,7 @@ fun ProjectPathScreenUI(projectPathViewModel: ProjectPathViewModel) {
     ) {
 
         val isErrorDialogVisible = remember { mutableStateOf(false) }
+        val isLoaderVisible = remember { mutableStateOf(false) }
 
         if (isErrorDialogVisible.value) {
             ErrorDialog(
@@ -118,7 +121,7 @@ fun ProjectPathScreenUI(projectPathViewModel: ProjectPathViewModel) {
                     ) {
                         //TODO how to make scrollable???
                         val textState =
-                            remember { mutableStateOf(TextFieldValue("/Users/chetangupta/StudioProjects/ColorChetan")) }
+                            remember { mutableStateOf(TextFieldValue(DataStore.projectPath)) }
                         TextField(
                             value = textState.value,
                             onValueChange = {
@@ -128,6 +131,23 @@ fun ProjectPathScreenUI(projectPathViewModel: ProjectPathViewModel) {
                             modifier = Modifier.fillMaxWidth(),
                         )
                         Text("Enter Project Path...", color = White1)
+
+                        Spacer(modifier = Modifier.height(dp120))
+
+                        if (isLoaderVisible.value) {
+                            Box(modifier = Modifier.fillMaxWidth()) {
+
+                                Column(modifier = Modifier.fillMaxWidth(),horizontalAlignment = Alignment.CenterHorizontally)  {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(28.dp),
+                                        color = Green
+                                    )
+                                    Text("Validating Project...", color = White1)
+                                }
+
+                            }
+                        }
+
                     }
 
                 }
@@ -179,8 +199,11 @@ fun ProjectPathScreenUI(projectPathViewModel: ProjectPathViewModel) {
                         onClick = {
                             Timber.i("ProjectPath UI -> next clicked")
                             try {
-                                projectPathViewModel.validatePath(DataStore.projectPath)
-                                projectPathViewModel.toSelectModulesScreen()
+                                isLoaderVisible.value = true
+                                projectPathViewModel.validatePath(DataStore.projectPath) {
+                                    isLoaderVisible.value = false
+                                    projectPathViewModel.toSelectModulesScreen()
+                                }
                             } catch (e: Exception) {
                                 DataStore.errorMessage = e.message ?: "Something went wrong"
                                 isErrorDialogVisible.value = true
@@ -201,18 +224,25 @@ class ProjectPathViewModel(
     val onBackPress: () -> Unit
 ) : ViewModel() {
 
-    fun validatePath(projectPath: String) {
-        val projectRoot = File(projectPath)
-        val existing = projectRoot.exists()
-        if (!existing) {
-            throw Exception("invalid path")
+    fun validatePath(projectPath: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            val projectRoot = File(projectPath)
+            val existing = projectRoot.exists()
+            if (!existing) {
+                throw Exception("invalid path")
+            }
+
+            projectRoot.walk()
+                .asSequence()
+                .firstOrNull {
+                    it.name.contains("AndroidManifest.xml")
+                } ?: throw Exception("Not an android project")
+
+            delay(1000)
+            onSuccess.invoke()
         }
-        validateAndroidProject(projectPath)
     }
 
-    fun validateAndroidProject(projectPath: String) {
-        val buildFiles = File(projectPath).walk().toList()
-        Timber.d(buildFiles.joinToString { "$it\n" })
-    }
+
 }
 
