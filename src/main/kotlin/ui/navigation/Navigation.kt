@@ -2,10 +2,17 @@ package ui.navigation
 
 
 import androidx.compose.runtime.Composable
-import com.arkivanov.decompose.*
+import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.extensions.compose.jetbrains.Children
+import com.arkivanov.decompose.pop
+import com.arkivanov.decompose.push
+import com.arkivanov.decompose.router
 import com.arkivanov.decompose.statekeeper.Parcelable
+import framework.Timber
 import framework.component.functional.NavigationComponent
+import ui.screens.migration.MigrationScreenNavigationComponent
+import ui.screens.projectpath.ProjectPathScreenNavigationComponent
+import ui.screens.selectmodule.SelectModuleScreenNavigationComponent
 import ui.screens.splash.SplashScreenNavigationComponent
 import ui.screens.welcome.WelcomeScreenNavigationComponent
 
@@ -30,30 +37,37 @@ class NavHostNavigationComponent(
     )
 
     fun toSplashScreen() {
+        Timber.i("navigator -> toSplashScreen")
         router.push(NavHostNavigationComponent.Screens.Splash)
     }
 
     fun toWelcomeScreen() {
+        Timber.i("navigator -> toWelcomeScreen")
         router.push(NavHostNavigationComponent.Screens.Welcome)
     }
 
     fun toProjectPathScreen() {
+        Timber.i("navigator -> toProjectPathScreen")
         router.push(NavHostNavigationComponent.Screens.ProjectPath)
     }
 
     fun toSelectModulesScreen() {
+        Timber.i("navigator -> toSelectModulesScreen")
         router.push(NavHostNavigationComponent.Screens.SelectModules)
     }
 
     fun toMigrationScreen() {
+        Timber.i("navigator -> toMigrationScreen")
         router.push(NavHostNavigationComponent.Screens.Migration)
     }
 
     fun toUpdateScreen() {
+        Timber.i("navigator -> toUpdateScreen")
         router.push(NavHostNavigationComponent.Screens.Update)
     }
 
     fun onBackClicked() {
+        Timber.i("navigator -> onBackClicked")
         router.pop()
     }
 
@@ -68,12 +82,22 @@ class NavHostNavigationComponent(
             )
             is Screens.Welcome -> WelcomeScreenNavigationComponent(
                 componentContext = componentContext,
-                ::toProjectPathScreen,
-                ::toWelcomeScreen
+                ::toProjectPathScreen
             )
-            is Screens.ProjectPath -> TODO()
-            is Screens.SelectModules -> TODO()
-            is Screens.Migration -> TODO()
+            is Screens.ProjectPath -> ProjectPathScreenNavigationComponent(
+                componentContext = componentContext,
+                ::toSelectModulesScreen,
+                ::onBackClicked
+            )
+            is Screens.SelectModules -> SelectModuleScreenNavigationComponent(
+                componentContext = componentContext,
+                ::toMigrationScreen,
+                ::onBackClicked
+            )
+            is Screens.Migration -> MigrationScreenNavigationComponent(
+                componentContext = componentContext,
+                ::onBackClicked
+            )
             is Screens.Update -> TODO()
         }
     }
@@ -81,6 +105,7 @@ class NavHostNavigationComponent(
 
     @Composable
     override fun render() {
+        Timber.i("render root router...")
         Children(routerState = router.state) { child ->
             child.instance.render()
         }

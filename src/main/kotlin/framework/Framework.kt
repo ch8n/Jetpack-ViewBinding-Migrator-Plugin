@@ -7,6 +7,8 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
 
+typealias Timber = com.toxicbakery.logging.Arbor
+
 data class BuildConfig(
     val appName: String = "ViewBinderWizard",
     val author: String = "Chetan Gupta",

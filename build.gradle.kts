@@ -23,6 +23,9 @@ dependencies {
     // Decompose : Decompose
     implementation("com.arkivanov.decompose:decompose:0.2.1")
     implementation("com.arkivanov.decompose:extensions-compose-jetbrains:0.2.1")
+
+    // Logging
+    implementation("com.ToxicBakery.logging:arbor-jvm:1.35.72")
 }
 
 tasks.withType<KotlinCompile>() {
