@@ -8,23 +8,26 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.OutlinedButton
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ComponentContext
 import framework.Timber
 import framework.component.functional.NavigationComponent
 import framework.component.functional.ViewModel
+import ui.screens.welcome.ErrorDialog
+import java.io.File
+
+object DataStore {
+    var projectPath = ""
+    var errorMessage = ""
+}
 
 
 class ProjectPathScreenNavigationComponent(
@@ -60,6 +63,25 @@ fun ProjectPathScreenUI(projectPathViewModel: ProjectPathViewModel) {
         color = Primary,
         modifier = Modifier.fillMaxSize()
     ) {
+
+        val isErrorDialogVisible = remember { mutableStateOf(false) }
+
+        if (isErrorDialogVisible.value) {
+            ErrorDialog(
+                errorMessage = DataStore.errorMessage,
+                onDialogCancel = {
+                    DataStore.errorMessage = ""
+                    isErrorDialogVisible.value = false
+                },
+                onDialogProceeded = {
+                    DataStore.errorMessage = ""
+                    isErrorDialogVisible.value = false
+                }
+            )
+        }
+
+
+
         Column(
             Modifier.fillMaxSize(),
         ) {
@@ -95,7 +117,17 @@ fun ProjectPathScreenUI(projectPathViewModel: ProjectPathViewModel) {
                             )
                     ) {
                         //TODO how to make scrollable???
-                        Text("PROJECT PATH...")
+                        val textState =
+                            remember { mutableStateOf(TextFieldValue("/Users/chetangupta/StudioProjects/ColorChetan")) }
+                        TextField(
+                            value = textState.value,
+                            onValueChange = {
+                                DataStore.projectPath = it.text
+                                textState.value = it
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Text("Enter Project Path...", color = White1)
                     }
 
                 }
@@ -146,7 +178,13 @@ fun ProjectPathScreenUI(projectPathViewModel: ProjectPathViewModel) {
                         ),
                         onClick = {
                             Timber.i("ProjectPath UI -> next clicked")
-                            projectPathViewModel.toSelectModulesScreen()
+                            try {
+                                projectPathViewModel.validatePath(DataStore.projectPath)
+                                projectPathViewModel.toSelectModulesScreen()
+                            } catch (e: Exception) {
+                                DataStore.errorMessage = e.message ?: "Something went wrong"
+                                isErrorDialogVisible.value = true
+                            }
                         },
                     ) {
                         Text("Next", color = White1)
@@ -161,5 +199,20 @@ fun ProjectPathScreenUI(projectPathViewModel: ProjectPathViewModel) {
 class ProjectPathViewModel(
     val toSelectModulesScreen: () -> Unit,
     val onBackPress: () -> Unit
-) : ViewModel()
+) : ViewModel() {
+
+    fun validatePath(projectPath: String) {
+        val projectRoot = File(projectPath)
+        val existing = projectRoot.exists()
+        if (!existing) {
+            throw Exception("invalid path")
+        }
+        validateAndroidProject(projectPath)
+    }
+
+    fun validateAndroidProject(projectPath: String) {
+        val buildFiles = File(projectPath).walk().toList()
+        Timber.d(buildFiles.joinToString { "$it\n" })
+    }
+}
 
