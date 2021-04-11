@@ -12,9 +12,7 @@ import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -57,6 +55,23 @@ fun WelcomeScreenUI(welcomeViewModel: WelcomeViewModel) {
         color = Primary,
         modifier = Modifier.fillMaxSize()
     ) {
+
+        val isDialogVisible = remember { mutableStateOf(false) }
+
+        if (isDialogVisible.value){
+            WarningDialog(
+                onDialogCancel = {
+                    Arbor.i("Welcome UI -> onDialogCancel callback")
+                    isDialogVisible.value = false
+                },
+                onDialogProceeded = {
+                    Arbor.i("Welcome UI -> onDialogProceeded callback")
+                    welcomeViewModel.toProjectPathScreen.invoke()
+                    isDialogVisible.value = false
+                }
+            )
+        }
+
         Column(
             Modifier.fillMaxSize(),
         ) {
@@ -162,7 +177,7 @@ fun WelcomeScreenUI(welcomeViewModel: WelcomeViewModel) {
                         ),
                         onClick = {
                             Arbor.i("Welcome UI -> Next clicked")
-                            welcomeViewModel.toProjectPathScreen.invoke()
+                            isDialogVisible.value = true
                         }
                     ) {
                         Text("Next", color = White1)
