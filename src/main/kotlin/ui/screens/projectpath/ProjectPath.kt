@@ -29,6 +29,7 @@ import java.io.File
 object DataStore {
     var projectPath = "/Users/chetangupta/StudioProjects/ColorChetan"
     var errorMessage = ""
+    val selectedPath = mutableMapOf<String, File>()
 }
 
 
@@ -137,7 +138,10 @@ fun ProjectPathScreenUI(projectPathViewModel: ProjectPathViewModel) {
                         if (isLoaderVisible.value) {
                             Box(modifier = Modifier.fillMaxWidth()) {
 
-                                Column(modifier = Modifier.fillMaxWidth(),horizontalAlignment = Alignment.CenterHorizontally)  {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(28.dp),
                                         color = Green
