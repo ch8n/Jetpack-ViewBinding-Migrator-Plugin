@@ -19,6 +19,7 @@ import kotlin.system.exitProcess
 
 @Composable
 fun WarningDialog(
+    message: String,
     onDialogCancel: () -> Unit,
     onDialogProceeded: () -> Unit,
 ) {
@@ -31,15 +32,7 @@ fun WarningDialog(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Text("Caution!")
-            Text(
-                """
-                | Use Application
-                | on your own risk!
-                | I'm not responsible if code breaks
-                | highly recommend to use Version Control
-                | such as git to revert changes
-            """.trimIndent()
-            )
+            Text(message)
 
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = dp48),

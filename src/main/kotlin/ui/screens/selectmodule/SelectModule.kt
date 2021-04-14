@@ -23,10 +23,13 @@ import com.toxicbakery.logging.Arbor
 import framework.Timber
 import framework.component.functional.NavigationComponent
 import framework.component.functional.ViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import ui.screens.projectpath.DataStore
 import ui.screens.welcome.ErrorDialog
+import ui.screens.welcome.WarningDialog
 import java.io.File
 
 
@@ -99,10 +102,11 @@ fun SelectModuleScreenUI(selectModuleViewModel: SelectModuleViewModel) {
                             )
                     ) {
                         //TODO how to make scrollable???
-
-                        val isLoaderVisible = remember { mutableStateOf(true) }
+                        val projectModules = selectModuleViewModel.projectModule.collectAsState()
+                        val isLoaderVisible = remember { mutableStateOf(projectModules.value.isEmpty()) }
 
                         if (isLoaderVisible.value) {
+
                             Box(modifier = Modifier.fillMaxWidth()) {
 
                                 Column(
@@ -118,15 +122,17 @@ fun SelectModuleScreenUI(selectModuleViewModel: SelectModuleViewModel) {
                             }
                         }
 
-                        val projectModules = selectModuleViewModel.projectModule.collectAsState()
-
                         if (projectModules.value.isNotEmpty()) {
                             Timber.d("SelectModuleUI -> stop loading")
                             isLoaderVisible.value = false
                             LazyColumn(modifier = Modifier.padding(dp16).fillMaxSize()) {
                                 val modules = projectModules.value.toList()
                                 items(modules) { (moduleName, file) ->
-                                    val checkedState = remember { mutableStateOf(false) }
+                                    val checkedState = remember {
+                                        mutableStateOf(
+                                            selectModuleViewModel.selectedModule.contains(moduleName)
+                                        )
+                                    }
                                     Row {
                                         Checkbox(
                                             checked = checkedState.value,
@@ -135,10 +141,10 @@ fun SelectModuleScreenUI(selectModuleViewModel: SelectModuleViewModel) {
                                                 Timber.d("SelectModuleUI -> checked $moduleName $it ")
                                                 if (checkedState.value) {
                                                     Timber.d("SelectModuleUI -> datastore added $moduleName")
-                                                    DataStore.selectedPath.put(moduleName, file)
+                                                    selectModuleViewModel.selectedModule.put(moduleName, file)
                                                 } else {
                                                     Timber.d("SelectModuleUI -> datastore removed $moduleName")
-                                                    DataStore.selectedPath.remove(moduleName)
+                                                    selectModuleViewModel.selectedModule.remove(moduleName)
                                                 }
                                             }
                                         )
@@ -194,7 +200,7 @@ fun SelectModuleScreenUI(selectModuleViewModel: SelectModuleViewModel) {
                     }
 
                     val isErrorDialogVisible = remember { mutableStateOf(false) }
-                    if (isErrorDialogVisible.value){
+                    if (isErrorDialogVisible.value) {
                         ErrorDialog(
                             errorMessage = "No module select for migration",
                             onDialogCancel = {
@@ -204,6 +210,29 @@ fun SelectModuleScreenUI(selectModuleViewModel: SelectModuleViewModel) {
                             onDialogProceeded = {
                                 Timber.i("Select Module UI -> ErrorDialog | onDialogProceeded callback | No module selected")
                                 isErrorDialogVisible.value = false
+                            }
+                        )
+                    }
+
+                    val isWarningDialogVisible = remember { mutableStateOf(false) }
+
+                    if (isWarningDialogVisible.value) {
+                        WarningDialog(
+                            message = """
+                                Very Risky Business now!
+                                Don't terminate the app until migration complete.
+                                If something went wrong, use version-control to migrate your project back!
+                                All the best...
+                            """.trimIndent(),
+                            onDialogCancel = {
+                                Timber.i("Select Module UI -> WarningDialog | onDialogProceeded callback")
+                                isWarningDialogVisible.value = false
+                            },
+                            onDialogProceeded = {
+                                Timber.i("Select Module UI -> WarningDialog | onDialogProceeded callback")
+                                DataStore.selectedPath.putAll(selectModuleViewModel.selectedModule)
+                                selectModuleViewModel.toMigrationScreen()
+                                isWarningDialogVisible.value = false
                             }
                         )
                     }
@@ -218,9 +247,9 @@ fun SelectModuleScreenUI(selectModuleViewModel: SelectModuleViewModel) {
                         ),
                         onClick = {
                             Timber.i("SelectModule UI -> next clicked")
-                            val isModuleSelected = DataStore.selectedPath.isNotEmpty()
+                            val isModuleSelected = selectModuleViewModel.selectedModule.isNotEmpty()
                             if (isModuleSelected) {
-                                selectModuleViewModel.toMigrationScreen()
+                                isWarningDialogVisible.value = true
                             } else {
                                 isErrorDialogVisible.value = true
                             }
@@ -243,25 +272,30 @@ class SelectModuleViewModel(
 
     private val _projectModules = MutableStateFlow<Map<String, File>>(emptyMap())
     val projectModule = _projectModules.asStateFlow()
+    val selectedModule = mutableMapOf<String, File>()
 
     fun scanForModules() {
-        Timber.d("SelectModuleViewModel -> scanning project for module")
+        viewModelScope.launch {
+            Timber.d("SelectModuleViewModel -> scanning project for module")
 
-        val projectPath = DataStore.projectPath
-        val projectFile = File(projectPath)
-        val mainPathFiles: List<File> = projectFile.walk()
-            .asSequence()
-            .filter { it.path.endsWith("src/main") }
-            .toList()
-            .also { Timber.e(it.joinToString(separator = "\n")) }
+            val projectPath = DataStore.projectPath
+            val projectFile = File(projectPath)
+            val mainPathFiles: List<File> = projectFile.walk()
+                .asSequence()
+                .filter { it.path.endsWith("src/main") }
+                .toList()
+                .also { Timber.e(it.joinToString(separator = "\n")) }
 
-        val moduleNames: Map<String, File> = mainPathFiles.map {
-            val key = it.path.split("/").dropLast(2).last()
-            val value = it
-            return@map key to value
-        }.toMap()
-        Timber.d("SelectModuleViewModel -> found modules $moduleNames")
-        _projectModules.value = moduleNames
+            val moduleNames: Map<String, File> = mainPathFiles.map {
+                val key = it.path.split("/").dropLast(2).last()
+                val value = it
+                return@map key to value
+            }.toMap()
+            delay(1000)
+            Timber.d("SelectModuleViewModel -> found modules $moduleNames")
+            _projectModules.value = moduleNames
+        }
+
     }
 
 

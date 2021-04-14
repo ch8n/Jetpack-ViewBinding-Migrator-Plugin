@@ -58,8 +58,15 @@ fun WelcomeScreenUI(welcomeViewModel: WelcomeViewModel) {
 
         val isDialogVisible = remember { mutableStateOf(false) }
 
-        if (isDialogVisible.value){
+        if (isDialogVisible.value) {
             WarningDialog(
+                message = """
+                | Use Application
+                | on your own risk!
+                | I'm not responsible if code breaks
+                | highly recommend to use Version Control
+                | such as git to revert changes
+            """.trimIndent(),
                 onDialogCancel = {
                     Arbor.i("Welcome UI -> onDialogCancel callback")
                     isDialogVisible.value = false
