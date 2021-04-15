@@ -14,5 +14,8 @@ android {
 """.trimIndent()
     }
 
+    fun appendPackageName(codeContent: String, packageName: String): String {
+        return "package ${packageName}\n\n${codeContent}"
+    }
 
 }

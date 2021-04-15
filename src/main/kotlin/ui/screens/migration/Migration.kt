@@ -24,6 +24,7 @@ import framework.component.functional.NavigationComponent
 import framework.component.functional.ViewModel
 import ui.screens.projectpath.DataStore
 import java.io.File
+import java.nio.file.Path
 
 
 class MigrationScreenNavigationComponent(
@@ -164,11 +165,12 @@ class MigrationViewModel(
         val selectedModules = DataStore.selectedPath
         Timber.i("MigrationViewModel -> startMigration")
         val modulePaths = selectedModules.values.toList()
-            .forEach { addGradleDependency(it) }
+            .onEach(::addGradleDependency)
+            .onEach(::addBaseClassOnModule)
 
     }
 
-    fun addGradleDependency(moduleFile: File) {
+    private fun addGradleDependency(moduleFile: File) {
         Timber.i("MigrationViewModel -> addGradleDependency")
         // find source path
         val moduleRoot = moduleFile.path.split("/").dropLast(2).joinToString("/")
@@ -177,6 +179,8 @@ class MigrationViewModel(
         val buildGradle = File(moduleRoot).walk()
             .asSequence()
             .firstOrNull { it.path.contains("build.gradle") } ?: return
+
+        Timber.d("MigrationViewModel -> addGradleDependency | buildGradle \n ${buildGradle.path}")
 
         val isKotlinDSL = buildGradle.name.contains(".kt")
         if (isKotlinDSL) {
@@ -187,12 +191,73 @@ class MigrationViewModel(
         val gradleContent = buildGradle.readText()
         val isBuildFeaturePresent = gradleContent.contains("buildFeatures")
         if (isBuildFeaturePresent) {
-            TODO("flow not developed")
+            Timber.e("MigrationViewModel -> addGradleDependency | isBuildFeaturePresent : $isBuildFeaturePresent")
+            //todo develop flow to handle
+            return
         }
         val addedBuildFeatureGradleContent: String = Templates.appendBuildFeature(gradleContent)
         buildGradle.bufferedWriter().use { out ->
             out.write(addedBuildFeatureGradleContent)
         }
+        Timber.e("MigrationViewModel -> addedBuildFeatureGradleContent | completed")
+        Timber.e("--------------------------------")
+        Timber.d(addedBuildFeatureGradleContent)
+        Timber.e("--------------------------------")
+    }
+
+    private fun addBaseClassOnModule(moduleFile: File) {
+        Timber.i("MigrationViewModel -> addBaseClassOnModule")
+
+        val packageRoot = moduleFile.walk().asSequence()
+            .firstOrNull { it.path.contains(".kt") }
+
+        // TODO flow if package is in kotlin folder not java
+        // TODO refactor code to support `\` in case of windows
+
+        val packagePath = packageRoot?.path
+            ?.split("java")
+            ?.getOrNull(1)
+            ?.split("/")
+            ?.take(4)
+
+        val packageName = packagePath?.joinToString(".")?.drop(1)
+
+        val moduleRoot = packagePath
+            ?.joinToString("/", prefix = "${moduleFile.path}/java")
+
+        if (moduleRoot == null || packageName == null) {
+            Timber.e("MigrationViewModel -> Root module not found")
+            return
+        }
+
+        val viewBinderBaseFile = File("$moduleRoot/base")
+        if (!viewBinderBaseFile.exists()) {
+            viewBinderBaseFile.mkdir()
+        }
+        val wizardRoot = File(Path.of("").toAbsolutePath().toString())
+        val viewBindingTemplate = wizardRoot.walk().asSequence()
+            .firstOrNull { it.name.contains("ViewBindingTemplate.txt") }
+
+        if (viewBindingTemplate?.exists() == false) {
+            Timber.e("MigrationViewModel -> ViewBindingTemplate not found in project \n ${viewBindingTemplate.path}")
+            return
+        }
+
+        val templateContent = viewBindingTemplate?.readText()
+        if (templateContent.isNullOrEmpty()) {
+            Timber.e("MigrationViewModel -> ViewBindingTemplate content is empty \n ${viewBindingTemplate?.path}")
+            return
+        }
+
+        val packageNameTemplate = Templates.appendPackageName(templateContent, "${packageName}.base")
+        val viewBindingBaseClassFile = File("${viewBinderBaseFile.path}/ViewBindingActivity.kt")
+        if (!viewBindingBaseClassFile.exists()) {
+            viewBindingBaseClassFile.bufferedWriter().use { out ->
+                out.write(packageNameTemplate)
+            }
+            Timber.e("MigrationViewModel -> viewBindingBaseClassFile created")
+        }
+        Timber.e("MigrationViewModel -> addBaseClassOnModule completed for ${moduleFile.path}")
     }
 
 }
