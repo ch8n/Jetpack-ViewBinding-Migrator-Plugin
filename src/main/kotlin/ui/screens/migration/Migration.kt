@@ -22,6 +22,8 @@ import com.arkivanov.decompose.ComponentContext
 import framework.Timber
 import framework.component.functional.NavigationComponent
 import framework.component.functional.ViewModel
+import ui.screens.projectpath.DataStore
+import java.io.File
 
 
 class MigrationScreenNavigationComponent(
@@ -41,6 +43,7 @@ class MigrationScreenNavigationComponent(
         val scope = rememberCoroutineScope()
         LaunchedEffect(migrationViewModel) {
             migrationViewModel.init(scope)
+            migrationViewModel.startMigration()
         }
 
         MigrationScreenUI(migrationViewModel)
@@ -141,6 +144,7 @@ fun MigrationScreenUI(migrationViewModel: MigrationViewModel) {
                         ),
                         onClick = {
                             Timber.i("Migrate UI -> finish clicked")
+                            migrationViewModel.startMigration()
                         },
                     ) {
                         Text("FINISH", color = White1)
@@ -155,5 +159,41 @@ fun MigrationScreenUI(migrationViewModel: MigrationViewModel) {
 
 class MigrationViewModel(
     val onBackClicked: () -> Unit
-) : ViewModel()
+) : ViewModel() {
+    fun startMigration() {
+        val selectedModules = DataStore.selectedPath
+        Timber.i("MigrationViewModel -> startMigration")
+        val modulePaths = selectedModules.values.toList()
+            .forEach { addGradleDependency(it) }
+
+    }
+
+    fun addGradleDependency(moduleFile: File) {
+        Timber.i("MigrationViewModel -> addGradleDependency")
+        // find source path
+        val moduleRoot = moduleFile.path.split("/").dropLast(2).joinToString("/")
+
+        // find build gradle
+        val buildGradle = File(moduleRoot).walk()
+            .asSequence()
+            .firstOrNull { it.path.contains("build.gradle") } ?: return
+
+        val isKotlinDSL = buildGradle.name.contains(".kt")
+        if (isKotlinDSL) {
+            TODO("flow not developed")
+        }
+
+        // append build feature and update dependency file
+        val gradleContent = buildGradle.readText()
+        val isBuildFeaturePresent = gradleContent.contains("buildFeatures")
+        if (isBuildFeaturePresent) {
+            TODO("flow not developed")
+        }
+        val addedBuildFeatureGradleContent: String = Templates.appendBuildFeature(gradleContent)
+        buildGradle.bufferedWriter().use { out ->
+            out.write(addedBuildFeatureGradleContent)
+        }
+    }
+
+}
 
