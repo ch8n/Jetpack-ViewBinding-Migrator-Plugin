@@ -167,6 +167,8 @@ class MigrationViewModel(
         val modulePaths = selectedModules.values.toList()
             .onEach(::addGradleDependency)
             .onEach(::addBaseClassOnModule)
+            .map(::parseResourceIds)
+            .onEach { (moduleFile, ids) -> migrateActivityIds(moduleFile, ids) }
 
     }
 
@@ -208,22 +210,7 @@ class MigrationViewModel(
     private fun addBaseClassOnModule(moduleFile: File) {
         Timber.i("MigrationViewModel -> addBaseClassOnModule")
 
-        val packageRoot = moduleFile.walk().asSequence()
-            .firstOrNull { it.path.contains(".kt") }
-
-        // TODO flow if package is in kotlin folder not java
-        // TODO refactor code to support `\` in case of windows
-
-        val packagePath = packageRoot?.path
-            ?.split("java")
-            ?.getOrNull(1)
-            ?.split("/")
-            ?.take(4)
-
-        val packageName = packagePath?.joinToString(".")?.drop(1)
-
-        val moduleRoot = packagePath
-            ?.joinToString("/", prefix = "${moduleFile.path}/java")
+        val (packageName, moduleRoot) = packagePathAndName(moduleFile)
 
         if (moduleRoot == null || packageName == null) {
             Timber.e("MigrationViewModel -> Root module not found")
@@ -260,5 +247,59 @@ class MigrationViewModel(
         Timber.e("MigrationViewModel -> addBaseClassOnModule completed for ${moduleFile.path}")
     }
 
+    private fun packagePathAndName(moduleFile: File): Pair<String?, String?> {
+
+        val packageRoot = moduleFile.walk().asSequence()
+            .firstOrNull { it.path.contains(".kt") }
+
+        // TODO flow if package is in kotlin folder not java
+        // TODO refactor code to support `\` in case of windows
+
+        val packagePath = packageRoot?.path
+            ?.split("java")
+            ?.getOrNull(1)
+            ?.split("/")
+            ?.take(4)
+
+        val packageName = packagePath?.joinToString(".")?.drop(1)
+
+        val moduleRoot = packagePath
+            ?.joinToString("/", prefix = "${moduleFile.path}/java")
+
+        return Pair(packageName, moduleRoot)
+    }
+
+    private fun parseResourceIds(moduleFile: File): Pair<File, Map<String, String>> {
+        Timber.i("MigrationViewModel -> parseResourceIds \n ${moduleFile.path}")
+
+        val resourcesFiles = File("${moduleFile.path}/res/layout")
+        if (!resourcesFiles.exists()) {
+            Timber.e("MigrationViewModel -> resourcesFiles not found \n ${resourcesFiles.path}")
+            return moduleFile to emptyMap()
+        }
+
+        val allResourceIds = resourcesFiles.walk().asSequence()
+            .filter { it.name.contains(".xml") }
+            .flatMap { it.readText().lines() }
+            .filter { it.contains("android:id=\"@+id/") }
+            .map { it.split("android:id=\"@+id/")[1].dropLast(1).trim() }
+
+        // todo figure out other popular conventions?
+        val bindingIds = allResourceIds.map { id ->
+            val words = id.split("_")
+            val first = words.take(1)
+            val others = words.drop(1).map { it.capitalize() }
+            id to (first + others).joinToString(separator = "")
+        }.toMap()
+
+        Timber.d("MigrationViewModel -> allResourceIds \n ${allResourceIds.joinToString("\n")}")
+        Timber.d("MigrationViewModel -> allBindingIds \n ${bindingIds.entries.joinToString("\n")}")
+
+        return moduleFile to bindingIds
+    }
+
+    private fun migrateActivityIds(moduleFile: File, ids: Map</*layoutIds*/String,/*bindingIds*/String>) {
+        //todo start here
+    }
 }
 
