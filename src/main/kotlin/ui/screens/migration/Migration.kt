@@ -24,6 +24,7 @@ import framework.component.functional.NavigationComponent
 import framework.component.functional.ViewModel
 import ui.screens.projectpath.DataStore
 import java.io.File
+import java.io.FileWriter
 import java.nio.file.Path
 
 
@@ -301,12 +302,15 @@ class MigrationViewModel(
     private fun migrateActivityIds(moduleFile: File, ids: Map</*layoutIds*/String,/*bindingIds*/String>) {
         Timber.i("MigrationViewModel -> migrateActivityIds \n ${moduleFile.path}")
         val (packageName, moduleRoot) = packagePathAndName(moduleFile)
+
         if (moduleRoot == null || packageName == null) {
             Timber.e("MigrationViewModel -> migrateActivityIds Root module not found")
             return
         }
+
         val root = File(moduleRoot)
         Timber.i("MigrationViewModel -> rootFile \n ${root.path}")
+
         val activities = root.walk().asSequence()
             .filter { it.name.contains(".kt") }
             .filter { !it.path.contains("base") }
@@ -318,13 +322,96 @@ class MigrationViewModel(
 
         activities
             .filter { !it.readText().contains("ViewBindingActivity<") }
-            .map { activity ->
-                val activityContent = activity.readText()
-                activityContent.lines()
-
+            .onEach { activity ->
+                val (_, bindingClassName) = getBindClassName(activity)
+                val activityContentWithImports = modifyActivityImportsForViewBinding(activity, bindingClassName)
+                val activityContentWithViewBinder = modifySuperClassOfActivity(activityContentWithImports, bindingClassName)
+                val activityContextWithBindings = modifyActivityLayoutIds(activityContentWithViewBinder, ids)
+                overrideCurrentActivityContent(activityContextWithBindings,activity)
             }
 
     }
 
+    private fun getBindClassName(activity: File): Pair<String, String> {
+        val activityContent = activity.readText()
+        val activityLines = activityContent.lines()
+        val layoutLine = activityLines.first { it.contains("R.layout") }
+        val layoutName = layoutLine.split(".").last().dropLast(1)
+        Timber.d("MigrationViewModel -> layoutName $layoutName")
+        val viewBindingClassName = layoutName.split("_")
+            .joinToString(separator = "") { it.capitalize() }
+            .let { "${it}Binding" }
+
+        Timber.d("MigrationViewModel -> viewBindingClassName $viewBindingClassName")
+        return layoutName to viewBindingClassName
+    }
+
+    private fun getActivityPackageName(activity: File): String {
+        val activityContent = activity.readText()
+        val activityLines = activityContent.lines()
+        val packageNameLine = activityLines.first { it.contains("package") }
+        val (_, packageName) = packageNameLine.split("package")
+        return packageName
+    }
+
+    private fun modifyActivityImportsForViewBinding(activity: File, bindingClassName: String): String {
+        val activityContent = activity.readText()
+        val activityLines = activityContent.lines().toMutableList()
+
+        val syntheticImportIndex = activityLines.indexOfFirst {
+            it.contains("kotlinx.android.synthetic")
+        }
+
+        val activityPackageName = getActivityPackageName(activity)
+        val importTemplate = Templates.getViewBindingImportsForActivity(activityPackageName, bindingClassName)
+
+        // add imports for viewbinding
+        activityLines.add(syntheticImportIndex, importTemplate)
+
+        return activityLines.joinToString("\n")
+    }
+
+    private fun modifySuperClassOfActivity(activityContent: String, bindingClassName: String): String {
+
+        val activityLines = activityContent.lines().toMutableList()
+
+        //replace parent activity with viewbinding Activity
+        val superClassLineIndex = activityLines.indexOfFirst { it.contains(": AppCompatActivity") }
+        val viewBindSuperClass = activityLines[superClassLineIndex]
+            .replace("AppCompatActivity", "ViewBindingActivity<$bindingClassName>")
+        activityLines.removeAt(superClassLineIndex)
+        activityLines.add(superClassLineIndex, viewBindSuperClass)
+
+        // add viewbinding inflater method
+        val inflatorTemplate = Templates.getBindingInflatorTemplateForActivity(bindingClassName)
+        activityLines.add(superClassLineIndex + 1, inflatorTemplate)
+
+        // remove content view
+        activityLines.removeIf { it.contains("setContentView") }
+        return activityLines.joinToString("\n")
+    }
+
+    private fun modifyActivityLayoutIds(activityContent: String, ids: Map<String, String>): String {
+        // hack for concurrent read write
+        var activityLines = activityContent.lines().toMutableList()
+        ids.forEach { (layoutId, bindingId) ->
+            activityLines.mapIndexed { index, line ->
+                if (line.contains(layoutId)) {
+                    val updatedLine = line.replace(layoutId, "binding.$bindingId")
+                    activityLines.removeAt(index)
+                    activityLines.add(index, updatedLine)
+                }
+                activityLines = activityLines.toMutableList()
+            }
+        }
+        val activityWithBindings = activityLines.toMutableList()
+        return activityWithBindings.joinToString("\n")
+    }
+
+    private fun overrideCurrentActivityContent(activityContent: String,activity: File){
+        val fileWriter = FileWriter(activity, false)
+        fileWriter.write(activityContent)
+        fileWriter.close()
+    }
 }
 
