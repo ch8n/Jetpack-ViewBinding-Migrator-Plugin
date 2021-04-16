@@ -299,7 +299,32 @@ class MigrationViewModel(
     }
 
     private fun migrateActivityIds(moduleFile: File, ids: Map</*layoutIds*/String,/*bindingIds*/String>) {
-        //todo start here
+        Timber.i("MigrationViewModel -> migrateActivityIds \n ${moduleFile.path}")
+        val (packageName, moduleRoot) = packagePathAndName(moduleFile)
+        if (moduleRoot == null || packageName == null) {
+            Timber.e("MigrationViewModel -> migrateActivityIds Root module not found")
+            return
+        }
+        val root = File(moduleRoot)
+        Timber.i("MigrationViewModel -> rootFile \n ${root.path}")
+        val activities = root.walk().asSequence()
+            .filter { it.name.contains(".kt") }
+            .filter { !it.path.contains("base") }
+            .filter { it.readText().contains("AppCompatActivity()") }
+            .toList()
+            .also {
+                Timber.d("MigrationViewModel -> Activity files \n ${it.joinToString("\n")}")
+            }
+
+        activities
+            .filter { !it.readText().contains("ViewBindingActivity<") }
+            .map { activity ->
+                val activityContent = activity.readText()
+                activityContent.lines()
+
+            }
+
     }
+
 }
 
