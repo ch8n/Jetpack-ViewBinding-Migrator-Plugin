@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ComponentContext
 import framework.Timber
@@ -81,21 +82,31 @@ fun MigrationScreenUI(migrationViewModel: MigrationViewModel) {
                         .padding(horizontal = dp24)
                 ) {
 
-                    val scrollState = rememberScrollState()
                     Column(
                         modifier = Modifier
                             .padding(dp20)
                             .fillMaxSize()
-                            .verticalScroll(state = scrollState)
                     ) {
                         //TODO how to make scrollable???
                         Text("Migrate Project...")
                         val progressState: Float by migrationViewModel.progressBarState.collectAsState()
 
                         LinearProgressIndicator(
-                            modifier = Modifier.fillMaxWidth().padding(top = dp16),
+                            modifier = Modifier.fillMaxWidth().padding(top = dp8),
                             progress = progressState,
                             color = Green
+                        )
+
+                        val scrollState = rememberScrollState()
+                        val logMessage: String by migrationViewModel.logMessageState.collectAsState()
+
+                        TextField(
+                            modifier = Modifier.padding(start = dp8)
+                                .fillMaxSize()
+                                .verticalScroll(state = scrollState),
+                            value = TextFieldValue(text = logMessage),
+                            onValueChange = {},
+                            enabled = false
                         )
 
 
@@ -167,6 +178,7 @@ class MigrationViewModel(
 ) : ViewModel() {
 
     val progressBarState = MutableStateFlow(0.0f)
+    val logMessageState = MutableStateFlow("")
 
     fun startMigration() {
         val selectedModules = DataStore.selectedPath
@@ -214,6 +226,8 @@ class MigrationViewModel(
         buildGradle.bufferedWriter().use { out ->
             out.write(addedBuildFeatureGradleContent)
         }
+
+        logMessageState.value = "${logMessageState.value}\n${moduleFile.name} | added viewbinding gradle dependency"
         Timber.e("MigrationViewModel -> addedBuildFeatureGradleContent | completed")
         Timber.e("--------------------------------")
         Timber.d(addedBuildFeatureGradleContent)
@@ -257,6 +271,7 @@ class MigrationViewModel(
             }
             Timber.e("MigrationViewModel -> viewBindingBaseClassFile created")
         }
+        logMessageState.value = "${logMessageState.value}\n${moduleFile.name} | added base classes"
         Timber.e("MigrationViewModel -> addBaseClassOnModule completed for ${moduleFile.path}")
     }
 
@@ -305,6 +320,7 @@ class MigrationViewModel(
             id to (first + others).joinToString(separator = "")
         }.toMap()
 
+        logMessageState.value = "${logMessageState.value}\n${moduleFile.name} | parsed binding ids"
         Timber.d("MigrationViewModel -> allResourceIds \n ${allResourceIds.joinToString("\n")}")
         Timber.d("MigrationViewModel -> allBindingIds \n ${bindingIds.entries.joinToString("\n")}")
 
@@ -343,6 +359,7 @@ class MigrationViewModel(
                 overrideCurrentActivityContent(activityContextWithBindings, activity)
             }
 
+        logMessageState.value = "${logMessageState.value}\n${moduleFile.name} | migrated layout ids to binding ids"
     }
 
     private fun getBindClassName(activity: File): Pair<String, String> {
