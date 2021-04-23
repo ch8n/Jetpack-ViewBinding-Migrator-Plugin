@@ -1,6 +1,6 @@
 import android.os.Bundle
 import android.view.LayoutInflater
-import androidx.appcompat.app.AppCompatActivity
+import <ReplaceBasePackage>
 import androidx.viewbinding.ViewBinding
 
 /**
@@ -10,7 +10,7 @@ import androidx.viewbinding.ViewBinding
  *  Tool : Generated using ViewBinderWizard
  **/
 
-abstract class ViewBindingActivity<VB : ViewBinding> : AppCompatActivity() {
+abstract class ViewBindingActivity<VB : ViewBinding> : <ReplaceBaseName>() {
 
     private var _binding: ViewBinding? = null
     abstract val bindingInflater: (LayoutInflater) -> VB

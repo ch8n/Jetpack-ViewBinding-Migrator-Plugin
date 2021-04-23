@@ -2,8 +2,6 @@ package ui.screens.migration
 
 import Themes.*
 import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -19,7 +17,6 @@ import framework.Timber
 import framework.component.functional.NavigationComponent
 import framework.component.functional.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import ui.screens.projectpath.DataStore
 import java.io.File
 import java.io.FileWriter
@@ -249,10 +246,14 @@ class MigrationViewModel(
         }
 
         val packageNameTemplate = Templates.appendPackageName(templateContent, "${packageName}.base")
+        val basePackagesTemplate = packageNameTemplate
+            .replace("<ReplaceBasePackage>",DataStore.packageNameBaseActivity)
+            .replace("<ReplaceBaseName>",DataStore.baseActivityName)
+
         val viewBindingBaseClassFile = File("${viewBinderBaseFile.path}/ViewBindingActivity.kt")
         if (!viewBindingBaseClassFile.exists()) {
             viewBindingBaseClassFile.bufferedWriter().use { out ->
-                out.write(packageNameTemplate)
+                out.write(basePackagesTemplate)
             }
             Timber.e("MigrationViewModel -> viewBindingBaseClassFile created")
         }
@@ -327,7 +328,7 @@ class MigrationViewModel(
         val activities = root.walk().asSequence()
             .filter { it.name.contains(".kt") }
             .filter { !it.path.contains("base") }
-            .filter { it.readText().contains("AppCompatActivity()") }
+            .filter { it.readText().contains("${DataStore.baseActivityName}()") }
             .toList()
             .also {
                 Timber.d("MigrationViewModel -> Activity files \n ${it.joinToString("\n")}")
@@ -351,8 +352,9 @@ class MigrationViewModel(
         val activityContent = activity.readText()
         val activityLines = activityContent.lines()
         val layoutLine = activityLines.first { it.contains("R.layout") }
-        val layoutName = layoutLine.split(".").last().dropLast(1)
+        val layoutName = layoutLine.split(".").last()
         Timber.d("MigrationViewModel -> layoutName $layoutName")
+
         val viewBindingClassName = layoutName.split("_")
             .joinToString(separator = "") { it.capitalize() }
             .let { "${it}Binding" }
@@ -377,7 +379,7 @@ class MigrationViewModel(
             it.contains("kotlinx.android.synthetic")
         }
 
-        val activityPackageName = getActivityPackageName(activity)
+        val activityPackageName = getActivityPackageName(activity).split(".").take(3).joinToString(".")
         val importTemplate = Templates.getViewBindingImportsForActivity(activityPackageName, bindingClassName)
 
         // add imports for viewbinding
@@ -391,9 +393,9 @@ class MigrationViewModel(
         val activityLines = activityContent.lines().toMutableList()
 
         //replace parent activity with viewbinding Activity
-        val superClassLineIndex = activityLines.indexOfFirst { it.contains(": AppCompatActivity") }
+        val superClassLineIndex = activityLines.indexOfFirst { it.contains(": ${DataStore.baseActivityName}") }
         val viewBindSuperClass = activityLines[superClassLineIndex]
-            .replace("AppCompatActivity", "ViewBindingActivity<$bindingClassName>")
+            .replace("${DataStore.baseActivityName}", "ViewBindingActivity<$bindingClassName>")
         activityLines.removeAt(superClassLineIndex)
         activityLines.add(superClassLineIndex, viewBindSuperClass)
 

@@ -27,9 +27,15 @@ import ui.screens.welcome.ErrorDialog
 import java.io.File
 
 object DataStore {
-    var projectPath = "/Users/chetangupta/StudioProjects/ColorChetan"
+    var projectPath = "/Users/chetangupta/StudioProjects/GitTrends"
     var errorMessage = ""
+    val baseActivityName: String
+        get() = packageNameBaseActivity.split(".").last()
+
+    var packageNameBaseActivity = "dev.ch8n.gittrends.ui.base.BaseActivity"
+
     val selectedPath = mutableMapOf<String, File>()
+
 }
 
 
@@ -121,17 +127,29 @@ fun ProjectPathScreenUI(projectPathViewModel: ProjectPathViewModel) {
                             )
                     ) {
                         //TODO how to make scrollable???
-                        val textState =
-                            remember { mutableStateOf(TextFieldValue(DataStore.projectPath)) }
+                        val projectPathState = remember { mutableStateOf(TextFieldValue(DataStore.projectPath)) }
+                        val activityPackageState = remember { mutableStateOf(TextFieldValue(DataStore.packageNameBaseActivity)) }
+
                         TextField(
-                            value = textState.value,
+                            value = projectPathState.value,
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("Enter Project Path") },
                             onValueChange = {
                                 DataStore.projectPath = it.text
-                                textState.value = it
-                            },
-                            modifier = Modifier.fillMaxWidth(),
+                                projectPathState.value = it
+                            }
                         )
-                        Text("Enter Project Path...", color = White1)
+
+                        TextField(
+                            value = activityPackageState.value,
+                            modifier = Modifier.padding(top = dp8),
+                            placeholder = { Text("Base Activity with package name (Case Sensitive)") },
+                            onValueChange = {
+                                DataStore.packageNameBaseActivity = it.text
+                                activityPackageState.value = it
+                            }
+                        )
+
 
                         Spacer(modifier = Modifier.height(dp120))
 
