@@ -24,6 +24,7 @@ import ui.screens.projectpath.DataStore
 import java.io.File
 import java.io.FileWriter
 import java.nio.file.Path
+import kotlin.system.exitProcess
 
 
 class MigrationScreenNavigationComponent(
@@ -101,12 +102,12 @@ fun MigrationScreenUI(migrationViewModel: MigrationViewModel) {
                         val logMessage: String by migrationViewModel.logMessageState.collectAsState()
 
                         TextField(
-                            modifier = Modifier.padding(start = dp8)
+                            modifier = Modifier.padding(top = dp8)
                                 .fillMaxSize()
                                 .verticalScroll(state = scrollState),
                             value = TextFieldValue(text = logMessage),
                             onValueChange = {},
-                            enabled = false
+                            readOnly = true
                         )
 
 
@@ -132,39 +133,23 @@ fun MigrationScreenUI(migrationViewModel: MigrationViewModel) {
                     Text("Buy me a coffee?", color = Color.Black)
                 }
 
-                Row {
+                val migrationProgress: Float by migrationViewModel.progressBarState.collectAsState()
 
-                    OutlinedButton(
-                        modifier = Modifier
-                            .width(152.dp)
-                            .height(46.dp)
-                            .padding(horizontal = dp8),
-                        colors = ButtonDefaults.textButtonColors(
-                            backgroundColor = Red
-                        ),
-                        onClick = {
-                            Timber.i("Migrate UI -> back clicked")
-                            migrationViewModel.onBackClicked()
-                        },
-                    ) {
-                        Text("Back", color = White1)
-                    }
-
-                    OutlinedButton(
-                        modifier = Modifier
-                            .width(152.dp)
-                            .height(46.dp)
-                            .padding(horizontal = dp8),
-                        colors = ButtonDefaults.textButtonColors(
-                            backgroundColor = Green
-                        ),
-                        onClick = {
-                            Timber.i("Migrate UI -> finish clicked")
-                            migrationViewModel.startMigration()
-                        },
-                    ) {
-                        Text("FINISH", color = White1)
-                    }
+                OutlinedButton(
+                    modifier = Modifier
+                        .width(152.dp)
+                        .height(46.dp)
+                        .padding(horizontal = dp8),
+                    colors = ButtonDefaults.textButtonColors(
+                        backgroundColor = Green
+                    ),
+                    onClick = {
+                        Timber.i("Migrate UI -> finish clicked")
+                        exitProcess(0)
+                    },
+                    enabled = migrationProgress >= 1f
+                ) {
+                    Text("FINISH", color = White1)
                 }
             }
 
