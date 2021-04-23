@@ -1,17 +1,12 @@
 package ui.screens.migration
 
 import Themes.*
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,6 +17,8 @@ import com.arkivanov.decompose.ComponentContext
 import framework.Timber
 import framework.component.functional.NavigationComponent
 import framework.component.functional.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import ui.screens.projectpath.DataStore
 import java.io.File
 import java.io.FileWriter
@@ -89,13 +86,19 @@ fun MigrationScreenUI(migrationViewModel: MigrationViewModel) {
                         modifier = Modifier
                             .padding(dp20)
                             .fillMaxSize()
-                            .scrollable(
-                                state = scrollState,
-                                orientation = Orientation.Vertical
-                            )
+                            .verticalScroll(state = scrollState)
                     ) {
                         //TODO how to make scrollable???
                         Text("Migrate Project...")
+                        val progressState: Float by migrationViewModel.progressBarState.collectAsState()
+
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth().padding(top = dp16),
+                            progress = progressState,
+                            color = Green
+                        )
+
+
                     }
 
                 }
@@ -162,15 +165,24 @@ fun MigrationScreenUI(migrationViewModel: MigrationViewModel) {
 class MigrationViewModel(
     val onBackClicked: () -> Unit
 ) : ViewModel() {
+
+    val progressBarState = MutableStateFlow(0.0f)
+
     fun startMigration() {
         val selectedModules = DataStore.selectedPath
+        val progressStep = 1 / selectedModules.values.size.toFloat()
         Timber.i("MigrationViewModel -> startMigration")
         val modulePaths = selectedModules.values.toList()
             .onEach(::addGradleDependency)
+            .also { Timber.e("completed addGradleDependency") }
             .onEach(::addBaseClassOnModule)
+            .also { Timber.e("completed addBaseClassOnModule") }
             .map(::parseResourceIds)
+            .also { Timber.e("completed parseResourceIds") }
             .onEach { (moduleFile, ids) -> migrateActivityIds(moduleFile, ids) }
-
+            .also { Timber.e("completed migrateActivityIds") }
+            .onEach { progressBarState.value = progressBarState.value + progressStep }
+            .also { Timber.e("completed progressBarState ${progressBarState.value}") }
     }
 
     private fun addGradleDependency(moduleFile: File) {
@@ -325,9 +337,10 @@ class MigrationViewModel(
             .onEach { activity ->
                 val (_, bindingClassName) = getBindClassName(activity)
                 val activityContentWithImports = modifyActivityImportsForViewBinding(activity, bindingClassName)
-                val activityContentWithViewBinder = modifySuperClassOfActivity(activityContentWithImports, bindingClassName)
+                val activityContentWithViewBinder =
+                    modifySuperClassOfActivity(activityContentWithImports, bindingClassName)
                 val activityContextWithBindings = modifyActivityLayoutIds(activityContentWithViewBinder, ids)
-                overrideCurrentActivityContent(activityContextWithBindings,activity)
+                overrideCurrentActivityContent(activityContextWithBindings, activity)
             }
 
     }
@@ -408,7 +421,7 @@ class MigrationViewModel(
         return activityWithBindings.joinToString("\n")
     }
 
-    private fun overrideCurrentActivityContent(activityContent: String,activity: File){
+    private fun overrideCurrentActivityContent(activityContent: String, activity: File) {
         val fileWriter = FileWriter(activity, false)
         fileWriter.write(activityContent)
         fileWriter.close()
