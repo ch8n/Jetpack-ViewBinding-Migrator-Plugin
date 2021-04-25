@@ -39,7 +39,7 @@ object DataStore {
 }
 
 
-class ProjectPathScreenNavigationComponent(
+class ConfigureProjectScreenNavigationComponent(
     private val componentContext: ComponentContext,
     private val toSelectModulesScreen: () -> Unit,
     private val onBackPress: () -> Unit,

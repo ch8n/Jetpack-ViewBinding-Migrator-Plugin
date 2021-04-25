@@ -11,7 +11,7 @@ import com.arkivanov.decompose.statekeeper.Parcelable
 import framework.Timber
 import framework.component.functional.NavigationComponent
 import ui.screens.migration.MigrationScreenNavigationComponent
-import ui.screens.projectpath.ProjectPathScreenNavigationComponent
+import ui.screens.projectpath.ConfigureProjectScreenNavigationComponent
 import ui.screens.selectmodule.SelectModuleScreenNavigationComponent
 import ui.screens.splash.SplashScreenNavigationComponent
 import ui.screens.welcome.WelcomeScreenNavigationComponent
@@ -25,7 +25,7 @@ class NavHostNavigationComponent(
     sealed class Screens : Parcelable {
         object Splash : Screens()
         object Welcome : Screens()
-        object ProjectPath : Screens()
+        object ConfigureProject : Screens()
         object SelectModules : Screens()
         object Migration : Screens()
         object Update : Screens()
@@ -48,7 +48,7 @@ class NavHostNavigationComponent(
 
     fun toProjectPathScreen() {
         Timber.i("navigator -> toProjectPathScreen")
-        router.push(NavHostNavigationComponent.Screens.ProjectPath)
+        router.push(NavHostNavigationComponent.Screens.ConfigureProject)
     }
 
     fun toSelectModulesScreen() {
@@ -84,7 +84,7 @@ class NavHostNavigationComponent(
                 componentContext = componentContext,
                 ::toProjectPathScreen
             )
-            is Screens.ProjectPath -> ProjectPathScreenNavigationComponent(
+            is Screens.ConfigureProject -> ConfigureProjectScreenNavigationComponent(
                 componentContext = componentContext,
                 ::toSelectModulesScreen,
                 ::onBackClicked

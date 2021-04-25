@@ -5,6 +5,10 @@ An Jetpack compose desktop app to Migrate synthetic imports to Jetpack Viewbindi
 https://www.figma.com/file/KmQIjraCTA3STWIQLhMqcL/View-Binder-Wizard?node-id=0%3A1
 
 #TODO
+
+- Features
+    - Analytics
+
 - [ ] Privacy Policy && Disclaimer screen && Support Developer Screen
 - [ ] Project config screen
     - [ ] validate project is valid android project
