@@ -11,7 +11,7 @@ import com.arkivanov.decompose.statekeeper.Parcelable
 import framework.Timber
 import framework.component.functional.NavigationComponent
 import ui.screens.migration.MigrationScreenNavigationComponent
-import ui.screens.projectpath.ConfigureProjectScreenNavigationComponent
+import ui.screens.configproject.ConfigureProjectScreenNavigationComponent
 import ui.screens.selectmodule.SelectModuleScreenNavigationComponent
 import ui.screens.splash.SplashScreenNavigationComponent
 import ui.screens.welcome.WelcomeScreenNavigationComponent
@@ -46,8 +46,8 @@ class NavHostNavigationComponent(
         router.push(NavHostNavigationComponent.Screens.Welcome)
     }
 
-    fun toProjectPathScreen() {
-        Timber.i("navigator -> toProjectPathScreen")
+    fun toConfigureProject() {
+        Timber.i("navigator -> toConfigureProject")
         router.push(NavHostNavigationComponent.Screens.ConfigureProject)
     }
 
@@ -82,7 +82,7 @@ class NavHostNavigationComponent(
             )
             is Screens.Welcome -> WelcomeScreenNavigationComponent(
                 componentContext = componentContext,
-                ::toProjectPathScreen
+                ::toConfigureProject
             )
             is Screens.ConfigureProject -> ConfigureProjectScreenNavigationComponent(
                 componentContext = componentContext,

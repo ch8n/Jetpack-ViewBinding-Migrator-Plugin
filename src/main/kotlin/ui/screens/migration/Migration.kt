@@ -17,7 +17,7 @@ import framework.Timber
 import framework.component.functional.NavigationComponent
 import framework.component.functional.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import ui.screens.projectpath.DataStore
+import ui.screens.configproject.DataStore
 import java.io.File
 import java.io.FileWriter
 import java.nio.file.Path

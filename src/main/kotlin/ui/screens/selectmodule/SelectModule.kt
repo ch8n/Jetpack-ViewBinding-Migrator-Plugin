@@ -19,7 +19,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ComponentContext
-import com.toxicbakery.logging.Arbor
 import framework.Timber
 import framework.component.functional.NavigationComponent
 import framework.component.functional.ViewModel
@@ -27,7 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import ui.screens.projectpath.DataStore
+import ui.screens.configproject.DataStore
 import ui.screens.welcome.ErrorDialog
 import ui.screens.welcome.WarningDialog
 import java.io.File

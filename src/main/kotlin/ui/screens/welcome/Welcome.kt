@@ -28,11 +28,11 @@ import kotlin.system.exitProcess
 
 class WelcomeScreenNavigationComponent(
     private val componentContext: ComponentContext,
-    private val toProjectPathScreen: () -> Unit,
+    private val toConfigureProject: () -> Unit,
 ) : NavigationComponent, ComponentContext by componentContext {
 
     private val welcomeViewModel by lazy {
-        WelcomeViewModel(toProjectPathScreen)
+        WelcomeViewModel(toConfigureProject)
     }
 
     @Composable
@@ -73,7 +73,7 @@ fun WelcomeScreenUI(welcomeViewModel: WelcomeViewModel) {
                 },
                 onDialogProceeded = {
                     Arbor.i("Welcome UI -> onDialogProceeded callback")
-                    welcomeViewModel.toProjectPathScreen.invoke()
+                    welcomeViewModel.toConfigureProject.invoke()
                     isDialogVisible.value = false
                 }
             )
@@ -198,6 +198,6 @@ fun WelcomeScreenUI(welcomeViewModel: WelcomeViewModel) {
 
 
 class WelcomeViewModel(
-    val toProjectPathScreen: () -> Unit,
+    val toConfigureProject: () -> Unit,
 ) : ViewModel()
 
