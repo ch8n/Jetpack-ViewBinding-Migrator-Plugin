@@ -75,13 +75,13 @@ fun ConfigProjectScreenUI(projectPathViewModel: ProjectPathViewModel) {
     ) {
 
         val moduleSelectOption = listOf(ProjectModuleType.SINGLE, ProjectModuleType.MULTI)
-        val errorState by projectPathViewModel.errorState.collectAsState()
         val loadingState by projectPathViewModel.loadingState.collectAsState()
+        val errorState by projectPathViewModel.errorState.collectAsState()
         val (errorVisible, errorMessage) = errorState
 
-        var projectPathState by remember { mutableStateOf(TextFieldValue("")) }
+        var projectPathState by remember { mutableStateOf(TextFieldValue("/Users/chetangupta/StudioProjects/GitTrends")) }
         var projectTypeState by remember { mutableStateOf(ProjectModuleType.SINGLE) }
-        var baseFolderOrModuleName by remember { mutableStateOf(TextFieldValue("")) }
+        var baseFolderOrModuleName by remember { mutableStateOf(TextFieldValue("base")) }
 
 
         if (errorVisible) {

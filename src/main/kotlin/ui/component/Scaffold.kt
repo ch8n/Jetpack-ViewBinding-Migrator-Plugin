@@ -23,6 +23,7 @@ import ui.screens.configproject.DataStore
 @Composable
 fun AppScaffold(
     modifier: Modifier = Modifier,
+    scrollingEnabled: Boolean = true,
     body: @Composable () -> Unit
 ) {
     Column(
@@ -53,7 +54,12 @@ fun AppScaffold(
                     modifier = Modifier
                         .padding(dp20)
                         .fillMaxSize()
-                        .verticalScroll(state = scrollState)
+                        .apply {
+                            if (scrollingEnabled) {
+                                verticalScroll(state = scrollState)
+                            }
+                        }
+
                 ) {
                     body.invoke()
                 }
