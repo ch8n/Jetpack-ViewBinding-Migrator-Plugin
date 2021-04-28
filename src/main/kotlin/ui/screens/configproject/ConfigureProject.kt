@@ -1,21 +1,14 @@
 package ui.screens.configproject
 
 import Themes.*
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.material.*
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ComponentContext
@@ -28,6 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import ui.component.AppScaffold
 import ui.component.FooterScaffold
+import ui.data.AppDataStore
 import ui.data.Error
 import ui.data.ProjectModuleType
 import ui.data.ProjectSetting
@@ -64,7 +58,6 @@ class ConfigureProjectScreenNavigationComponent(
 
     @Composable
     override fun render() {
-
         val scope = rememberCoroutineScope()
         LaunchedEffect(projectPathViewModel) {
             projectPathViewModel.init(scope)
@@ -76,7 +69,6 @@ class ConfigureProjectScreenNavigationComponent(
 @Composable
 fun ConfigProjectScreenUI(projectPathViewModel: ProjectPathViewModel) {
 
-    // todo create UI
     Surface(
         color = Primary,
         modifier = Modifier.fillMaxSize()
@@ -88,7 +80,7 @@ fun ConfigProjectScreenUI(projectPathViewModel: ProjectPathViewModel) {
         val (errorVisible, errorMessage) = errorState
 
         var projectPathState by remember { mutableStateOf(TextFieldValue("")) }
-        var projectTypeState by remember { mutableStateOf(ProjectModuleType.NONE) }
+        var projectTypeState by remember { mutableStateOf(ProjectModuleType.SINGLE) }
         var baseFolderOrModuleName by remember { mutableStateOf(TextFieldValue("")) }
 
 
@@ -128,7 +120,7 @@ fun ConfigProjectScreenUI(projectPathViewModel: ProjectPathViewModel) {
                 Spacer(modifier = Modifier.height(dp16))
 
                 val baseLabel = when (projectTypeState) {
-                    ProjectModuleType.SINGLE, ProjectModuleType.NONE -> "Base Folder Name"
+                    ProjectModuleType.SINGLE -> "Base Folder Name"
                     ProjectModuleType.MULTI -> "Base Module Name"
                 }
 
@@ -171,6 +163,17 @@ fun ConfigProjectScreenUI(projectPathViewModel: ProjectPathViewModel) {
                         projectPathViewModel.loadingState.value = true
                         projectPathViewModel.validatePath(DataStore.projectPath) {
                             projectPathViewModel.loadingState.value = false
+                            val module = when (projectTypeState) {
+                                ProjectModuleType.SINGLE -> ProjectSetting.SingleModuleProject(
+                                    baseFolderOrModuleName.text,
+                                    projectPathState.text
+                                )
+                                ProjectModuleType.MULTI -> ProjectSetting.MultiModuleProject(
+                                    baseFolderOrModuleName.text,
+                                    projectPathState.text
+                                )
+                            }
+                            AppDataStore.projectConfig = module
                             projectPathViewModel.toSelectModulesScreen()
                         }
                     } catch (e: Exception) {
@@ -192,7 +195,6 @@ class ProjectPathViewModel(
 
     val errorState = MutableStateFlow(Error(isVisible = false, message = ""))
     val loadingState = MutableStateFlow(false)
-    val projectSetting = MutableStateFlow<ProjectSetting>(ProjectSetting.None)
 
     fun validatePath(projectPath: String, onSuccess: () -> Unit) = runBlocking {
         viewModelScope.launch {

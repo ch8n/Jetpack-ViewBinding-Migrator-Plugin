@@ -8,8 +8,7 @@ enum class LayoutIdFormat {
 
 enum class ProjectModuleType(val label: String) {
     SINGLE("Single-Module Project [ALPHA]"),
-    MULTI("Multi-Module Project [TBA]"),
-    NONE("")
+    MULTI("Multi-Module Project [TBA]")
 }
 
 sealed class MigrateConfig {
@@ -20,7 +19,6 @@ sealed class MigrateConfig {
 }
 
 sealed class ProjectSetting(projectPath: String) {
-    object None : ProjectSetting("")
     data class SingleModuleProject(val baseFolderName: String, val projectPath: String) : ProjectSetting(projectPath)
     data class MultiModuleProject(val baseModuleName: String, val projectPath: String) : ProjectSetting(projectPath)
 }

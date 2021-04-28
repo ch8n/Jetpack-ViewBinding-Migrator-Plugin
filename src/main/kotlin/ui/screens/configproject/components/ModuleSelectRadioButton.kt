@@ -22,6 +22,7 @@ fun ModuleSelectRadioButton(
 ) {
 
     val (selectedOption, onOptionSelected) = remember { mutableStateOf(moduleOptions.get(0)) }
+
     Row {
         moduleOptions.onEach { moduleType ->
             Row(modifier = Modifier
