@@ -108,12 +108,15 @@ fun ConfigProjectScreenUI(projectPathViewModel: ProjectPathViewModel) {
 
             AppScaffold {
 
+                Text("Enter Project Path")
+
                 TextField(
                     value = projectPathState,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Enter Project Path") },
+                    modifier = Modifier.fillMaxWidth().padding(top = dp8),
                     onValueChange = { projectPathState = it }
                 )
+
+                Spacer(modifier = Modifier.height(dp16))
 
                 ModuleSelectRadioButton(
                     moduleOptions = moduleSelectOption,
@@ -122,16 +125,23 @@ fun ConfigProjectScreenUI(projectPathViewModel: ProjectPathViewModel) {
                     }
                 )
 
+                Spacer(modifier = Modifier.height(dp16))
+
+                val baseLabel = when (projectTypeState) {
+                    ProjectModuleType.SINGLE, ProjectModuleType.NONE -> "Base Folder Name"
+                    ProjectModuleType.MULTI -> "Base Module Name"
+                }
+
+
+                Text(text = baseLabel)
+
                 TextField(
                     value = baseFolderOrModuleName,
                     modifier = Modifier.padding(top = dp8),
-                    placeholder = { Text("Base Activity with package name (Case Sensitive)") },
                     onValueChange = {
                         baseFolderOrModuleName = it
                     }
                 )
-
-                Spacer(modifier = Modifier.height(dp120))
 
                 if (loadingState) {
                     Box(modifier = Modifier.fillMaxWidth()) {
@@ -147,7 +157,6 @@ fun ConfigProjectScreenUI(projectPathViewModel: ProjectPathViewModel) {
                         }
                     }
                 }
-
             }
 
             FooterScaffold(

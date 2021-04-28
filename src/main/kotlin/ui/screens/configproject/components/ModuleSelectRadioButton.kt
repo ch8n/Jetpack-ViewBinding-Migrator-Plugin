@@ -2,6 +2,7 @@ package ui.screens.configproject.components
 
 import Themes.Green
 import Themes.dp16
+import Themes.dp8
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
@@ -30,7 +31,7 @@ fun ModuleSelectRadioButton(
                         onOptionSelected.invoke(moduleType)
                         onModuleOptionSelected.invoke(moduleType)
                     }
-                ).padding(horizontal = dp16)
+                ).padding(end = dp8)
             ) {
                 RadioButton(
                     selected = (moduleType == selectedOption),
