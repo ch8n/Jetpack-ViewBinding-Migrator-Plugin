@@ -86,7 +86,11 @@ fun MigrationScreenUI(migrationViewModel: MigrationViewModel) {
                             .fillMaxSize()
                     ) {
                         //TODO how to make scrollable???
-                        Text("Migrate Project...")
+                        Text(
+                            text ="Migrate Project",
+                            style = MaterialTheme.typography.h1,
+                            color = White1
+                        )
                         val progressState: Float by migrationViewModel.progressBarState.collectAsState()
 
                         LinearProgressIndicator(

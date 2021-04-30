@@ -30,13 +30,13 @@ import java.io.File
 
 class SelectModuleScreenNavigationComponent(
     private val componentContext: ComponentContext,
-    private val toMigrationScreen: () -> Unit,
+    private val toSelectComponentScreen: () -> Unit,
     private val onBackClicked: () -> Unit,
 ) : NavigationComponent, ComponentContext by componentContext {
 
     private val selectModuleViewModel by lazy {
         SelectModuleViewModel(
-            toMigrationScreen,
+            toSelectComponentScreen,
             onBackClicked
         )
     }
@@ -84,6 +84,7 @@ fun SelectModuleScreenUI(selectModuleViewModel: SelectModuleViewModel) {
             )
         }
 
+        // todo remove
         if (warningVisibleState) {
             WarningDialog(
                 message = """
@@ -98,8 +99,7 @@ fun SelectModuleScreenUI(selectModuleViewModel: SelectModuleViewModel) {
                 },
                 onDialogProceeded = {
                     Timber.i("Select Module UI -> WarningDialog | onDialogProceeded callback")
-                    AppDataStore.selectedModule.putAll(selectModuleViewModel.selectedModule)
-                    selectModuleViewModel.toMigrationScreen()
+
                     selectModuleViewModel.warningState.value = false
                 }
             )
@@ -109,6 +109,12 @@ fun SelectModuleScreenUI(selectModuleViewModel: SelectModuleViewModel) {
         Column {
 
             AppScaffold(scrollingEnabled = false) {
+
+                Text(
+                    text ="Select module",
+                    style = MaterialTheme.typography.h1,
+                    color = White1
+                )
 
                 if (loadingState) {
                     Box(modifier = Modifier.fillMaxWidth()) {
@@ -190,7 +196,9 @@ fun SelectModuleScreenUI(selectModuleViewModel: SelectModuleViewModel) {
                     Timber.i("SelectModule UI -> next clicked")
                     val isModuleSelected = selectModuleViewModel.selectedModule.isNotEmpty()
                     if (isModuleSelected) {
-                        selectModuleViewModel.warningState.value = true
+                        AppDataStore.selectedModule.putAll(selectModuleViewModel.selectedModule)
+                        selectModuleViewModel.toSelectComponentScreen()
+                        //selectModuleViewModel.warningState.value = true
                     } else {
                         selectModuleViewModel.errorState.value = errorState.copy(
                             isVisible = true,
@@ -205,7 +213,7 @@ fun SelectModuleScreenUI(selectModuleViewModel: SelectModuleViewModel) {
 }
 
 class SelectModuleViewModel(
-    val toMigrationScreen: () -> Unit,
+    val toSelectComponentScreen: () -> Unit,
     val onBackClicked: () -> Unit
 ) : ViewModel() {
 

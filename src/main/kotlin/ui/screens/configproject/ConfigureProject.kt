@@ -2,15 +2,13 @@ package ui.screens.configproject
 
 import Themes.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.ComponentContext
 import framework.Timber
 import framework.component.functional.NavigationComponent
@@ -100,7 +98,11 @@ fun ConfigProjectScreenUI(projectPathViewModel: ProjectPathViewModel) {
 
             AppScaffold {
 
-                Text("Enter Project Path")
+                Text(
+                    text ="Configure Project",
+                    style = MaterialTheme.typography.h1,
+                    color = White1
+                )
 
                 TextField(
                     value = projectPathState,
@@ -161,20 +163,31 @@ fun ConfigProjectScreenUI(projectPathViewModel: ProjectPathViewModel) {
                     Timber.i("ProjectPath UI -> next clicked")
                     try {
                         projectPathViewModel.loadingState.value = true
-                        projectPathViewModel.validatePath(DataStore.projectPath) {
+
+                        if (projectTypeState == ProjectModuleType.MULTI) {
                             projectPathViewModel.loadingState.value = false
-                            val module = when (projectTypeState) {
-                                ProjectModuleType.SINGLE -> ProjectSetting.SingleModuleProject(
-                                    baseFolderOrModuleName.text,
-                                    projectPathState.text
-                                )
-                                ProjectModuleType.MULTI -> ProjectSetting.MultiModuleProject(
-                                    baseFolderOrModuleName.text,
-                                    projectPathState.text
-                                )
+                            projectPathViewModel.errorState.value = errorState.copy(
+                                isVisible = true, message = "Multi-Module is Under Development"
+                            )
+                        } else {
+
+                            projectPathViewModel.validatePath(DataStore.projectPath) {
+                                projectPathViewModel.loadingState.value = false
+                                val module = when (projectTypeState) {
+                                    ProjectModuleType.SINGLE -> ProjectSetting.SingleModuleProject(
+                                        baseFolderOrModuleName.text,
+                                        projectPathState.text
+                                    )
+                                    ProjectModuleType.MULTI -> ProjectSetting.MultiModuleProject(
+                                        baseFolderOrModuleName.text,
+                                        projectPathState.text
+                                    )
+                                }
+
+                                AppDataStore.projectConfig = module
+                                projectPathViewModel.toSelectModulesScreen()
+
                             }
-                            AppDataStore.projectConfig = module
-                            projectPathViewModel.toSelectModulesScreen()
                         }
                     } catch (e: Exception) {
                         projectPathViewModel.errorState.value = errorState.copy(

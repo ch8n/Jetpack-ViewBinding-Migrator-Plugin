@@ -12,6 +12,7 @@ import framework.Timber
 import framework.component.functional.NavigationComponent
 import ui.screens.migration.MigrationScreenNavigationComponent
 import ui.screens.configproject.ConfigureProjectScreenNavigationComponent
+import ui.screens.selectComponent.SelectComponentScreenNavigationComponent
 import ui.screens.selectmodule.SelectModuleScreenNavigationComponent
 import ui.screens.splash.SplashScreenNavigationComponent
 import ui.screens.welcome.WelcomeScreenNavigationComponent
@@ -27,6 +28,7 @@ class NavHostNavigationComponent(
         object Welcome : Screens()
         object ConfigureProject : Screens()
         object SelectModules : Screens()
+        object SelectComponent : Screens()
         object Migration : Screens()
         object Update : Screens()
     }
@@ -54,6 +56,11 @@ class NavHostNavigationComponent(
     fun toSelectModulesScreen() {
         Timber.i("navigator -> toSelectModulesScreen")
         router.push(NavHostNavigationComponent.Screens.SelectModules)
+    }
+
+    fun toSelectComponentScreen() {
+        Timber.i("navigator -> toSelectComponentScreen")
+        router.push(NavHostNavigationComponent.Screens.SelectComponent)
     }
 
     fun toMigrationScreen() {
@@ -90,6 +97,11 @@ class NavHostNavigationComponent(
                 ::onBackClicked
             )
             is Screens.SelectModules -> SelectModuleScreenNavigationComponent(
+                componentContext = componentContext,
+                ::toSelectComponentScreen,
+                ::onBackClicked
+            )
+            is Screens.SelectComponent -> SelectComponentScreenNavigationComponent(
                 componentContext = componentContext,
                 ::toMigrationScreen,
                 ::onBackClicked
