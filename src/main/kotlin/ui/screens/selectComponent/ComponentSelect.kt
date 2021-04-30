@@ -32,10 +32,10 @@ enum class ComponentTabs {
     CustomViews
 }
 
-enum class LayoutIdsFormat {
-    CamelCase,
-    UnderScoreCase,
-    KebabCase
+enum class LayoutIdsFormat(val example:String) {
+    CamelCase(example = "textView"),
+    UnderScoreCase(example = "text_view | text_View"),
+    KebabCase(example = "text-view | text-View");
 }
 
 class SelectComponentScreenNavigationComponent(
@@ -148,7 +148,6 @@ fun workInProgress() {
 
 @Composable
 fun activityConfigTab(componentSelectViewModel: ComponentSelectViewModel) {
-
     val layoutIdformats = listOf(
         LayoutIdsFormat.UnderScoreCase,
         LayoutIdsFormat.CamelCase,
@@ -157,41 +156,66 @@ fun activityConfigTab(componentSelectViewModel: ComponentSelectViewModel) {
 
     var selectedId by remember { mutableStateOf(layoutIdformats.get(0)) }
     var baseActivityName by remember { mutableStateOf("AppCompatActivity") }
+    var selectedComponentState by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize().padding(dp16)) {
-        Text(
-            text = "Select Layout Id format",
-            style = MaterialTheme.typography.body1,
-        )
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize()) {
 
-        Row(modifier = Modifier.padding(top = dp16)) {
-            layoutIdformats.onEach { idFormat ->
-                Row(modifier = Modifier.padding(end = dp16)) {
-                    RadioButton(
-                        selected = (selectedId == idFormat),
-                        onClick = { selectedId = idFormat },
-                        colors = RadioButtonDefaults.colors(selectedColor = Green)
-                    )
+            Column(modifier = Modifier.fillMaxSize()) {
+
+                Column(modifier = Modifier.fillMaxSize().padding(dp16)) {
                     Text(
-                        text = idFormat.name,
+                        text = "Select Layout Id format",
                         style = MaterialTheme.typography.body1,
-                        modifier = Modifier.padding(start = dp16)
+                    )
+
+                    Row(modifier = Modifier.padding(top = dp16)) {
+                        layoutIdformats.onEach { idFormat ->
+                            Row(modifier = Modifier.padding(end = dp16)) {
+                                RadioButton(
+                                    selected = (selectedId == idFormat),
+                                    onClick = { selectedId = idFormat },
+                                    colors = RadioButtonDefaults.colors(selectedColor = Green)
+                                )
+                                Text(
+                                    text = "${idFormat.name}\nex: ${idFormat.example}",
+                                    style = MaterialTheme.typography.body1,
+                                    modifier = Modifier.padding(start = dp16)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(dp16))
+
+                    Text(text = "Base Activity Name")
+
+                    TextField(
+                        value = baseActivityName,
+                        modifier = Modifier.padding(top = dp8),
+                        onValueChange = { baseActivityName = it },
+                        maxLines = 1
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(dp16))
-
-        Text(text ="Base Activity Name")
-
-        TextField(
-            value = baseActivityName,
-            modifier = Modifier.padding(top = dp8),
-            onValueChange = { baseActivityName = it },
-            maxLines = 1
-        )
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
+            Row(modifier = Modifier.padding(dp16)) {
+                Checkbox(
+                    checked = selectedComponentState,
+                    onCheckedChange = { selectedComponentState = it }
+                )
+                Spacer(Modifier.width(dp16))
+                Text(
+                    text = "Activities",
+                    style = MaterialTheme.typography.body1,
+                )
+                Spacer(Modifier.width(dp16))
+            }
+        }
     }
+
 
 }
 
