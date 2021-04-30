@@ -104,6 +104,10 @@ fun ConfigProjectScreenUI(projectPathViewModel: ProjectPathViewModel) {
                     color = White1
                 )
 
+                Spacer(modifier = Modifier.height(dp8))
+
+                Text(text ="Project path")
+
                 TextField(
                     value = projectPathState,
                     modifier = Modifier.fillMaxWidth().padding(top = dp8),
