@@ -4,5 +4,6 @@ import java.io.File
 
 object AppDataStore {
     var projectConfig: ProjectSetting = ProjectSetting.SingleModuleProject("", "")
-    var selectedModule = mutableMapOf<String, File>()
+    val selectedModule = mutableMapOf<String, File>()
+    val migrateComponent = mutableMapOf<Component, ComponentConfig>()
 }

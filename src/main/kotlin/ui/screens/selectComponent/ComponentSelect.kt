@@ -3,7 +3,6 @@ package ui.screens.selectComponent
 import Themes.*
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,9 +12,12 @@ import com.arkivanov.decompose.ComponentContext
 import framework.Timber
 import framework.component.functional.NavigationComponent
 import framework.component.functional.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import ui.component.AppScaffold
 import ui.component.FooterScaffold
-import ui.data.Preview
+import ui.data.*
+import ui.screens.welcome.ErrorDialog
+import ui.screens.welcome.WarningDialog
 
 
 fun main() {
@@ -25,18 +27,6 @@ fun main() {
     }
 }
 
-enum class ComponentTabs {
-    Activities,
-    Fragments,
-    Adapter,
-    CustomViews
-}
-
-enum class LayoutIdsFormat(val example:String) {
-    CamelCase(example = "textView"),
-    UnderScoreCase(example = "text_view | text_View"),
-    KebabCase(example = "text-view | text-View");
-}
 
 class SelectComponentScreenNavigationComponent(
     private val componentContext: ComponentContext,
@@ -69,14 +59,53 @@ fun ComponentSelectScreenUI(componentSelectViewModel: ComponentSelectViewModel) 
         modifier = Modifier.fillMaxSize()
     ) {
 
-        val tabs = listOf<ComponentTabs>(
-            ComponentTabs.Activities,
-            ComponentTabs.Fragments,
-            ComponentTabs.Adapter,
-            ComponentTabs.CustomViews
+        val tabs = listOf<Component>(
+            Component.Activities,
+            Component.Fragments,
+            Component.Adapter,
+            Component.CustomViews
         )
 
         var selectedTabState by remember { mutableStateOf(tabs.get(0)) }
+        val warningState by componentSelectViewModel.warningState.collectAsState()
+        val errorState by componentSelectViewModel.errorState.collectAsState()
+        val (errorVisible, errorMessage) = errorState
+
+        if (errorVisible) {
+            ErrorDialog(
+                errorMessage = errorMessage,
+                onDialogCancel = {
+                    componentSelectViewModel.errorState.value = errorState.copy(isVisible = false)
+                },
+                onDialogProceeded = {
+                    componentSelectViewModel.errorState.value = errorState.copy(isVisible = false)
+                }
+            )
+        }
+
+
+        // todo remove
+        if (warningState) {
+            WarningDialog(
+                message = """
+                                Very Risky Business now!
+                                Don't terminate the app until migration complete.
+                                If something went wrong, use version-control to migrate your project back!
+                                All the best...
+                            """.trimIndent(),
+                onDialogCancel = {
+                    Timber.i("Select Module UI -> WarningDialog | onDialogProceeded callback")
+                    componentSelectViewModel.warningState.value = false
+                },
+                onDialogProceeded = {
+                    Timber.i("Select Module UI -> WarningDialog | onDialogProceeded callback")
+                    val config = componentSelectViewModel.selectedComponentConfig
+                    AppDataStore.migrateComponent.putAll(config)
+                    componentSelectViewModel.toMigrateScreen()
+                    componentSelectViewModel.warningState.value = false
+                }
+            )
+        }
 
 
         Column {
@@ -109,10 +138,10 @@ fun ComponentSelectScreenUI(componentSelectViewModel: ComponentSelectViewModel) 
 
                     Surface(color = White1, modifier = Modifier.fillMaxSize().border(2.dp, Primary)) {
                         when (selectedTabState) {
-                            ComponentTabs.Activities -> activityConfigTab(componentSelectViewModel)
-                            ComponentTabs.Fragments -> workInProgress()
-                            ComponentTabs.Adapter -> workInProgress()
-                            ComponentTabs.CustomViews -> workInProgress()
+                            Component.Activities -> activityConfigTab(componentSelectViewModel)
+                            Component.Fragments -> workInProgress()
+                            Component.Adapter -> workInProgress()
+                            Component.CustomViews -> workInProgress()
                         }
                     }
                 }
@@ -126,6 +155,14 @@ fun ComponentSelectScreenUI(componentSelectViewModel: ComponentSelectViewModel) 
                     componentSelectViewModel.onBackClicked()
                 },
                 onNextClicked = {
+                    val config = componentSelectViewModel.selectedComponentConfig
+                    if (config.isEmpty()){
+                        componentSelectViewModel.errorState.value = errorState.copy(
+                            isVisible = true, message = "Please select a component to migrate"
+                        )
+                    }else{
+                        componentSelectViewModel.warningState.value = true
+                    }
                     Timber.i("ComponentSelectScreen UI -> next clicked")
                 }
             )
@@ -148,13 +185,14 @@ fun workInProgress() {
 
 @Composable
 fun activityConfigTab(componentSelectViewModel: ComponentSelectViewModel) {
+
     val layoutIdformats = listOf(
         LayoutIdsFormat.UnderScoreCase,
         LayoutIdsFormat.CamelCase,
         LayoutIdsFormat.KebabCase
     )
 
-    var selectedId by remember { mutableStateOf(layoutIdformats.get(0)) }
+    var selectedLayoutIdFormat by remember { mutableStateOf(layoutIdformats.get(0)) }
     var baseActivityName by remember { mutableStateOf("AppCompatActivity") }
     var selectedComponentState by remember { mutableStateOf(false) }
 
@@ -173,8 +211,8 @@ fun activityConfigTab(componentSelectViewModel: ComponentSelectViewModel) {
                         layoutIdformats.onEach { idFormat ->
                             Row(modifier = Modifier.padding(end = dp16)) {
                                 RadioButton(
-                                    selected = (selectedId == idFormat),
-                                    onClick = { selectedId = idFormat },
+                                    selected = (selectedLayoutIdFormat == idFormat),
+                                    onClick = { selectedLayoutIdFormat = idFormat },
                                     colors = RadioButtonDefaults.colors(selectedColor = Green)
                                 )
                                 Text(
@@ -204,7 +242,15 @@ fun activityConfigTab(componentSelectViewModel: ComponentSelectViewModel) {
             Row(modifier = Modifier.padding(dp16)) {
                 Checkbox(
                     checked = selectedComponentState,
-                    onCheckedChange = { selectedComponentState = it }
+                    onCheckedChange = { isChecked ->
+                        if (isChecked) {
+                            val config = ComponentConfig.ActivityConfig(selectedLayoutIdFormat, baseActivityName)
+                            componentSelectViewModel.addConfig(config)
+                        } else {
+                            componentSelectViewModel.removeConfig(Component.Activities)
+                        }
+                        selectedComponentState = isChecked
+                    }
                 )
                 Spacer(Modifier.width(dp16))
                 Text(
@@ -224,5 +270,21 @@ class ComponentSelectViewModel(
     val onBackClicked: () -> Unit,
     val toMigrateScreen: () -> Unit
 ) : ViewModel() {
+
+    val errorState = MutableStateFlow(Error(isVisible = false, message = ""))
+    val warningState = MutableStateFlow(false)
+
+    private val _selectedComponentConfig = mutableMapOf<Component, ComponentConfig>()
+    val selectedComponentConfig
+        get() = _selectedComponentConfig.toMap()
+
+    fun addConfig(config: ComponentConfig) = when (config) {
+        is ComponentConfig.ActivityConfig -> _selectedComponentConfig.put(Component.Activities, config)
+        is ComponentConfig.CustomViewConfig -> _selectedComponentConfig.put(Component.CustomViews, config)
+        is ComponentConfig.FragmentConfig -> _selectedComponentConfig.put(Component.Fragments, config)
+        is ComponentConfig.RecyclerAdapterConfig -> _selectedComponentConfig.put(Component.Adapter, config)
+    }
+
+    fun removeConfig(component: Component) = _selectedComponentConfig.remove(component)
 
 }

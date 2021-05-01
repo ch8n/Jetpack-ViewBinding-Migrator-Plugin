@@ -1,9 +1,16 @@
 package ui.data
 
-enum class LayoutIdFormat {
-    CAMEL_CASE,
-    UNDERSCORE_CASE,
-    KEBAB_CASE
+enum class Component {
+    Activities,
+    Fragments,
+    Adapter,
+    CustomViews
+}
+
+enum class LayoutIdsFormat(val example:String) {
+    CamelCase(example = "textView"),
+    UnderScoreCase(example = "text_view | text_View"),
+    KebabCase(example = "text-view | text-View");
 }
 
 enum class ProjectModuleType(val label: String) {
@@ -11,11 +18,11 @@ enum class ProjectModuleType(val label: String) {
     MULTI("Multi-Module Project [TBA]")
 }
 
-sealed class MigrateConfig {
-    data class ActivityConfig(val layoutIdFormat: LayoutIdFormat, val baseActivityName: String) : MigrateConfig()
-    data class FragmentConfig(val layoutIdFormat: LayoutIdFormat, val baseFragmentName: String) : MigrateConfig()
-    data class RecyclerAdapterConfig(val layoutIdFormat: LayoutIdFormat) : MigrateConfig()
-    data class CustomViewConfig(val layoutIdFormat: LayoutIdFormat) : MigrateConfig()
+sealed class ComponentConfig {
+    data class ActivityConfig(val layoutIdFormat: LayoutIdsFormat, val baseActivityName: String) : ComponentConfig()
+    data class FragmentConfig(val layoutIdFormat: LayoutIdsFormat, val baseFragmentName: String) : ComponentConfig()
+    data class RecyclerAdapterConfig(val layoutIdFormat: LayoutIdsFormat) : ComponentConfig()
+    data class CustomViewConfig(val layoutIdFormat: LayoutIdsFormat) : ComponentConfig()
 }
 
 sealed class ProjectSetting(projectPath: String) {

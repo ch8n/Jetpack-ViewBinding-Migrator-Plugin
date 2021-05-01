@@ -64,7 +64,7 @@ fun SelectModuleScreenUI(selectModuleViewModel: SelectModuleViewModel) {
 
         val projectConfig = selectModuleViewModel.projectConfig
         val errorState by selectModuleViewModel.errorState.collectAsState()
-        val warningVisibleState by selectModuleViewModel.warningState.collectAsState()
+
         val loadingState by selectModuleViewModel.loadingState.collectAsState()
         val (errorVisible, errorMessage) = errorState
 
@@ -80,27 +80,6 @@ fun SelectModuleScreenUI(selectModuleViewModel: SelectModuleViewModel) {
                 onDialogProceeded = {
                     Timber.i("Select Module UI -> ErrorDialog | onDialogProceeded callback | No module selected")
                     selectModuleViewModel.errorState.value = errorState.copy(isVisible = false)
-                }
-            )
-        }
-
-        // todo remove
-        if (warningVisibleState) {
-            WarningDialog(
-                message = """
-                                Very Risky Business now!
-                                Don't terminate the app until migration complete.
-                                If something went wrong, use version-control to migrate your project back!
-                                All the best...
-                            """.trimIndent(),
-                onDialogCancel = {
-                    Timber.i("Select Module UI -> WarningDialog | onDialogProceeded callback")
-                    selectModuleViewModel.warningState.value = false
-                },
-                onDialogProceeded = {
-                    Timber.i("Select Module UI -> WarningDialog | onDialogProceeded callback")
-
-                    selectModuleViewModel.warningState.value = false
                 }
             )
         }
@@ -220,7 +199,6 @@ class SelectModuleViewModel(
     val projectConfig = AppDataStore.projectConfig
 
     val errorState = MutableStateFlow(Error(isVisible = false, message = ""))
-    val warningState = MutableStateFlow(false)
     val loadingState = MutableStateFlow(true)
 
     private val _projectModules = MutableStateFlow<Map<String, File>>(emptyMap())
