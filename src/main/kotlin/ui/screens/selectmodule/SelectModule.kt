@@ -147,6 +147,7 @@ fun SelectModuleScreenUI(selectModuleViewModel: SelectModuleViewModel) {
                                                 selectModuleViewModel.selectedModule.put(moduleName, file)
                                                 selectedState = selectModuleViewModel.selectedModule.contains(moduleName)
                                                 Timber.d("SelectModuleUI -> selected $moduleName ")
+                                                Timber.d("SelectModuleUI -> selected ${selectModuleViewModel.selectedModule.toString()} ")
                                             },
                                             colors = RadioButtonDefaults.colors(selectedColor = Green)
                                         )

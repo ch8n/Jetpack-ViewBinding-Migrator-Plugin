@@ -8,6 +8,16 @@ object Templates {
 ${before.trim()}
 
 android {
+    
+    /* 
+     * ViewBinderWizard Notes :
+     *  1. Gradle plugin should be more than 4.0.0
+     *     i.e `build.gradle` of project should be minimum `com.android.tools.build:gradle:4.0.0`  
+     *  2. Minimum Gradle version should be `6.1.1` 
+     *     i.e `gradle-wrapper.properties` should be minimum `distributionUrl=https\://services.gradle.org/distributions/gradle-6.1.1.zip`
+     *  3. Sync project after migration complete
+     */
+    
     buildFeatures.viewBinding = true
     ${after.trim()}
 

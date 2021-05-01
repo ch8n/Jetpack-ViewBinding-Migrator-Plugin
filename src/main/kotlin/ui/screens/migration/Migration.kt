@@ -13,18 +13,30 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ComponentContext
-import framework.Timber
 import framework.component.functional.NavigationComponent
 import framework.component.functional.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import ui.data.AppDataStore
-import ui.data.Component
-import ui.data.ComponentConfig
-import ui.data.ProjectSetting
+import ui.data.*
 import java.io.File
 import java.io.FileWriter
 import java.nio.file.Path
-import kotlin.system.exitProcess
+
+
+fun main() {
+    Preview {
+        with(AppDataStore) {
+            projectConfig = ProjectSetting.SingleModuleProject("base", "/Users/chetangupta/StudioProjects/GitTrends")
+            selectedModule.apply {
+                put("app", File("/Users/chetangupta/StudioProjects/GitTrends/app/src/main"))
+            }
+            migrateComponent.apply {
+                put(Component.Activities, ComponentConfig.ActivityConfig(LayoutIdsFormat.CamelCase, "BaseActivity"))
+            }
+        }
+        val testVM = MigrationViewModel({})
+        MigrationScreenUI(testVM)
+    }
+}
 
 
 class MigrationScreenNavigationComponent(
@@ -148,12 +160,13 @@ fun MigrationScreenUI(migrationViewModel: MigrationViewModel) {
                         backgroundColor = Green
                     ),
                     onClick = {
-                        Timber.i("Migrate UI -> finish clicked")
-                        exitProcess(0)
+                        println("Migrate UI -> finish clicked")
+                        migrationViewModel.startMigration()
+                        //exitProcess(0)
                     },
-                    enabled = migrationProgress >= 1f
+                    //enabled = migrationProgress >= 1f
                 ) {
-                    Text("FINISH", color = White1)
+                    Text("Start", color = White1)
                 }
             }
 
@@ -176,31 +189,31 @@ class MigrationViewModel(
     fun startMigration() {
         val progressStep = 1 / selectedModules.values.size.toFloat()
         //TODO TEST
-        Timber.i("MigrationViewModel -> startMigration")
+        println("MigrationViewModel -> startMigration")
         val modulePaths = selectedModules.values.toList()
             .onEach(::addGradleDependency)
-            .also { Timber.e("completed addGradleDependency") }
+            .also { println("--------completed addGradleDependency----------") }
             .onEach(::addBaseClassOnModule)
-            .also { Timber.e("completed addBaseClassOnModule") }
+            .also { println("--------completed addBaseClassOnModule--------") }
             .map(::parseResourceIds)
-            .also { Timber.e("completed parseResourceIds") }
-            .onEach { (moduleFile, ids) -> migrateActivityIds(moduleFile, ids) }
-            .also { Timber.e("completed migrateActivityIds") }
-            .onEach { progressBarState.value = progressBarState.value + progressStep }
-            .also { Timber.e("completed progressBarState ${progressBarState.value}") }
+            .also { println("--------completed parseResourceIds--------") }
+//            .onEach { (moduleFile, ids) -> migrateActivityIds(moduleFile, ids) }
+//            .also { println("completed migrateActivityIds") }
+//            .onEach { progressBarState.value = progressBarState.value + progressStep }
+//            .also { println("completed progressBarState ${progressBarState.value}") }
     }
 
     private fun addGradleDependency(moduleFile: File) {
-        Timber.i("MigrationViewModel -> addGradleDependency")
+        println("MigrationViewModel -> addGradleDependency")
         // find source path
         val moduleRoot = moduleFile.path.split("/").dropLast(2).joinToString("/")
-
+        println(moduleRoot)
         // find build gradle
         val buildGradle = File(moduleRoot).walk()
             .asSequence()
             .firstOrNull { it.path.contains("build.gradle") } ?: return
 
-        Timber.d("MigrationViewModel -> addGradleDependency | buildGradle \n ${buildGradle.path}")
+        println("MigrationViewModel -> addGradleDependency | buildGradle \n ${buildGradle.path}")
 
         val isKotlinDSL = buildGradle.name.contains(".kt")
         if (isKotlinDSL) {
@@ -211,7 +224,7 @@ class MigrationViewModel(
         val gradleContent = buildGradle.readText()
         val isBuildFeaturePresent = gradleContent.contains("buildFeatures")
         if (isBuildFeaturePresent) {
-            Timber.e("MigrationViewModel -> addGradleDependency | isBuildFeaturePresent : $isBuildFeaturePresent")
+            println("MigrationViewModel -> addGradleDependency | isBuildFeaturePresent : $isBuildFeaturePresent")
             //todo develop flow to handle
             return
         }
@@ -221,28 +234,32 @@ class MigrationViewModel(
         }
 
         logMessageState.value = "${logMessageState.value}\n${moduleFile.name} | added viewbinding gradle dependency"
-        Timber.e("MigrationViewModel -> addedBuildFeatureGradleContent | completed")
-        Timber.e("--------------------------------")
-        Timber.d(addedBuildFeatureGradleContent)
-        Timber.e("--------------------------------")
+        println("MigrationViewModel -> addedBuildFeatureGradleContent | completed")
+        println("--------------------------------")
+        println(addedBuildFeatureGradleContent)
+        println("--------------------------------")
     }
 
     private fun addBaseClassOnModule(moduleFile: File) {
-        Timber.i("MigrationViewModel -> addBaseClassOnModule")
+        println("MigrationViewModel -> addBaseClassOnModule")
 
         val (packageName, moduleRoot) = packagePathAndName(moduleFile)
+        println(packageName)
+        println(moduleRoot)
 
         if (moduleRoot == null || packageName == null) {
-            Timber.e("MigrationViewModel -> Root module not found")
+            println("MigrationViewModel -> Root module not found")
             return
         }
 
         val baseFolderName = projectConfig.baseFolderName
+
         val viewBinderBaseFile = moduleFile.walk()
             .firstOrNull { it.name.contains(baseFolderName) }
             ?: File("$moduleRoot/$baseFolderName")
 
         if (!viewBinderBaseFile.exists()) {
+            println("viewBinderBaseFile not existing so created")
             viewBinderBaseFile.mkdir()
         }
 
@@ -252,31 +269,42 @@ class MigrationViewModel(
             .firstOrNull { it.name.contains("ViewBindingTemplate.txt") }
 
         if (viewBindingTemplate?.exists() == false) {
-            Timber.e("MigrationViewModel -> ViewBindingTemplate not found in project \n ${viewBindingTemplate.path}")
+            println("MigrationViewModel -> ViewBindingTemplate not found in project \n ${viewBindingTemplate.path}")
             return
         }
 
         val templateContent = viewBindingTemplate?.readText()
         if (templateContent.isNullOrEmpty()) {
-            Timber.e("MigrationViewModel -> ViewBindingTemplate content is empty \n ${viewBindingTemplate?.path}")
+            println("MigrationViewModel -> ViewBindingTemplate content is empty \n ${viewBindingTemplate?.path}")
             return
         }
 
-        val packageNameTemplate = Templates.appendPackageName(templateContent, "${packageName}.base")
         val activityConfig = componentConfig.get(Component.Activities) as ComponentConfig.ActivityConfig
-        val basePackagesTemplate = packageNameTemplate
-            .replace("<ReplaceBasePackage>", "$moduleRoot/$baseFolderName")
-            .replace("<ReplaceBaseName>", activityConfig.baseActivityName)
+        val baseActivityName = activityConfig.baseActivityName
+        val baseActivityFile = moduleFile.walk().first { it.name.contains(baseActivityName) }
+        val basePackageName = baseActivityFile
+            .readLines()
+            .first { it.contains("package") }
+            .split(" ")
+            .getOrNull(1)?:""
+
+        println(basePackageName)
+
+        val basePackagesTemplate = templateContent
+            .replace("<ReplacePackageName>", basePackageName)
+            .replace("<ReplaceBasePackage>", "$basePackageName.$baseActivityName")
+            .replace("<ReplaceBaseName>", baseActivityName)
 
         val viewBindingBaseClassFile = File("${viewBinderBaseFile.path}/ViewBindingActivity.kt")
+
         if (!viewBindingBaseClassFile.exists()) {
             viewBindingBaseClassFile.bufferedWriter().use { out ->
                 out.write(basePackagesTemplate)
             }
-            Timber.e("MigrationViewModel -> viewBindingBaseClassFile created")
+            println("MigrationViewModel -> viewBindingBaseClassFile created")
         }
-        logMessageState.value = "${logMessageState.value}\n${moduleFile.name} | added base classes"
-        Timber.e("MigrationViewModel -> addBaseClassOnModule completed for ${moduleFile.path}")
+        logMessageState.value = "${logMessageState.value}\n${moduleFile.name} | added base class"
+        println("MigrationViewModel -> addBaseClassOnModule completed for ${moduleFile.path}")
     }
 
     private fun packagePathAndName(moduleFile: File): Pair<String?, String?> {
@@ -302,11 +330,11 @@ class MigrationViewModel(
     }
 
     private fun parseResourceIds(moduleFile: File): Pair<File, Map<String, String>> {
-        Timber.i("MigrationViewModel -> parseResourceIds \n ${moduleFile.path}")
+        println("MigrationViewModel -> parseResourceIds \n ${moduleFile.path}")
 
         val resourcesFiles = File("${moduleFile.path}/res/layout")
         if (!resourcesFiles.exists()) {
-            Timber.e("MigrationViewModel -> resourcesFiles not found \n ${resourcesFiles.path}")
+            println("MigrationViewModel -> resourcesFiles not found \n ${resourcesFiles.path}")
             return moduleFile to emptyMap()
         }
 
@@ -325,23 +353,23 @@ class MigrationViewModel(
         }.toMap()
 
         logMessageState.value = "${logMessageState.value}\n${moduleFile.name} | parsed binding ids"
-        Timber.d("MigrationViewModel -> allResourceIds \n ${allResourceIds.joinToString("\n")}")
-        Timber.d("MigrationViewModel -> allBindingIds \n ${bindingIds.entries.joinToString("\n")}")
+        println("MigrationViewModel -> allResourceIds \n ${allResourceIds.joinToString("\n")}")
+        println("MigrationViewModel -> allBindingIds \n ${bindingIds.entries.joinToString("\n")}")
 
         return moduleFile to bindingIds
     }
 
     private fun migrateActivityIds(moduleFile: File, ids: Map</*layoutIds*/String,/*bindingIds*/String>) {
-        Timber.i("MigrationViewModel -> migrateActivityIds \n ${moduleFile.path}")
+        println("MigrationViewModel -> migrateActivityIds \n ${moduleFile.path}")
         val (packageName, moduleRoot) = packagePathAndName(moduleFile)
 
         if (moduleRoot == null || packageName == null) {
-            Timber.e("MigrationViewModel -> migrateActivityIds Root module not found")
+            println("MigrationViewModel -> migrateActivityIds Root module not found")
             return
         }
 
         val root = File(moduleRoot)
-        Timber.i("MigrationViewModel -> rootFile \n ${root.path}")
+        println("MigrationViewModel -> rootFile \n ${root.path}")
         val activityConfig = componentConfig.get(Component.Activities) as ComponentConfig.ActivityConfig
         val activities = root.walk().asSequence()
             .filter { it.name.contains(".kt") }
@@ -349,7 +377,7 @@ class MigrationViewModel(
             .filter { it.readText().contains("${activityConfig.baseActivityName}()") }
             .toList()
             .also {
-                Timber.d("MigrationViewModel -> Activity files \n ${it.joinToString("\n")}")
+                println("MigrationViewModel -> Activity files \n ${it.joinToString("\n")}")
             }
 
         activities
@@ -371,13 +399,13 @@ class MigrationViewModel(
         val activityLines = activityContent.lines()
         val layoutLine = activityLines.first { it.contains("R.layout") }
         val layoutName = layoutLine.split(".").last()
-        Timber.d("MigrationViewModel -> layoutName $layoutName")
+        println("MigrationViewModel -> layoutName $layoutName")
 
         val viewBindingClassName = layoutName.split("_")
             .joinToString(separator = "") { it.capitalize() }
             .let { "${it}Binding" }
 
-        Timber.d("MigrationViewModel -> viewBindingClassName $viewBindingClassName")
+        println("MigrationViewModel -> viewBindingClassName $viewBindingClassName")
         return layoutName to viewBindingClassName
     }
 
