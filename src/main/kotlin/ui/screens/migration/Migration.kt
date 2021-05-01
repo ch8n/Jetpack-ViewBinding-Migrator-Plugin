@@ -17,7 +17,10 @@ import framework.Timber
 import framework.component.functional.NavigationComponent
 import framework.component.functional.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import ui.screens.configproject.DataStore
+import ui.data.AppDataStore
+import ui.data.Component
+import ui.data.ComponentConfig
+import ui.data.ProjectSetting
 import java.io.File
 import java.io.FileWriter
 import java.nio.file.Path
@@ -87,7 +90,7 @@ fun MigrationScreenUI(migrationViewModel: MigrationViewModel) {
                     ) {
                         //TODO how to make scrollable???
                         Text(
-                            text ="Migrate Project",
+                            text = "Migrate Project",
                             style = MaterialTheme.typography.h1,
                             color = White1
                         )
@@ -163,12 +166,16 @@ class MigrationViewModel(
     val onBackClicked: () -> Unit
 ) : ViewModel() {
 
+    private val projectConfig = AppDataStore.projectConfig as ProjectSetting.SingleModuleProject
+    private val selectedModules = AppDataStore.selectedModule
+    private val componentConfig = AppDataStore.migrateComponent
+
     val progressBarState = MutableStateFlow(0.0f)
     val logMessageState = MutableStateFlow("")
 
     fun startMigration() {
-        val selectedModules = DataStore.selectedPath
         val progressStep = 1 / selectedModules.values.size.toFloat()
+        //TODO TEST
         Timber.i("MigrationViewModel -> startMigration")
         val modulePaths = selectedModules.values.toList()
             .onEach(::addGradleDependency)
@@ -230,11 +237,17 @@ class MigrationViewModel(
             return
         }
 
-        val viewBinderBaseFile = File("$moduleRoot/base")
+        val baseFolderName = projectConfig.baseFolderName
+        val viewBinderBaseFile = moduleFile.walk()
+            .firstOrNull { it.name.contains(baseFolderName) }
+            ?: File("$moduleRoot/$baseFolderName")
+
         if (!viewBinderBaseFile.exists()) {
             viewBinderBaseFile.mkdir()
         }
+
         val wizardRoot = File(Path.of("").toAbsolutePath().toString())
+
         val viewBindingTemplate = wizardRoot.walk().asSequence()
             .firstOrNull { it.name.contains("ViewBindingTemplate.txt") }
 
@@ -250,9 +263,10 @@ class MigrationViewModel(
         }
 
         val packageNameTemplate = Templates.appendPackageName(templateContent, "${packageName}.base")
+        val activityConfig = componentConfig.get(Component.Activities) as ComponentConfig.ActivityConfig
         val basePackagesTemplate = packageNameTemplate
-            .replace("<ReplaceBasePackage>",DataStore.packageNameBaseActivity)
-            .replace("<ReplaceBaseName>",DataStore.baseActivityName)
+            .replace("<ReplaceBasePackage>", "$moduleRoot/$baseFolderName")
+            .replace("<ReplaceBaseName>", activityConfig.baseActivityName)
 
         val viewBindingBaseClassFile = File("${viewBinderBaseFile.path}/ViewBindingActivity.kt")
         if (!viewBindingBaseClassFile.exists()) {
@@ -328,11 +342,11 @@ class MigrationViewModel(
 
         val root = File(moduleRoot)
         Timber.i("MigrationViewModel -> rootFile \n ${root.path}")
-
+        val activityConfig = componentConfig.get(Component.Activities) as ComponentConfig.ActivityConfig
         val activities = root.walk().asSequence()
             .filter { it.name.contains(".kt") }
             .filter { !it.path.contains("base") }
-            .filter { it.readText().contains("${DataStore.baseActivityName}()") }
+            .filter { it.readText().contains("${activityConfig.baseActivityName}()") }
             .toList()
             .also {
                 Timber.d("MigrationViewModel -> Activity files \n ${it.joinToString("\n")}")
@@ -395,11 +409,12 @@ class MigrationViewModel(
     private fun modifySuperClassOfActivity(activityContent: String, bindingClassName: String): String {
 
         val activityLines = activityContent.lines().toMutableList()
+        val activityConfig = componentConfig.get(Component.Activities) as ComponentConfig.ActivityConfig
 
         //replace parent activity with viewbinding Activity
-        val superClassLineIndex = activityLines.indexOfFirst { it.contains(": ${DataStore.baseActivityName}") }
+        val superClassLineIndex = activityLines.indexOfFirst { it.contains(": ${activityConfig.baseActivityName}") }
         val viewBindSuperClass = activityLines[superClassLineIndex]
-            .replace("${DataStore.baseActivityName}", "ViewBindingActivity<$bindingClassName>")
+            .replace(activityConfig.baseActivityName, "ViewBindingActivity<$bindingClassName>")
         activityLines.removeAt(superClassLineIndex)
         activityLines.add(superClassLineIndex, viewBindSuperClass)
 

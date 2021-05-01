@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
-import ui.screens.configproject.DataStore
+
 
 @Composable
 fun AppScaffold(

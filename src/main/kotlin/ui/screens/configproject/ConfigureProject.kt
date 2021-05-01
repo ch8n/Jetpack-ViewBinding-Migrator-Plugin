@@ -27,20 +27,6 @@ import ui.screens.configproject.components.ModuleSelectRadioButton
 import ui.screens.welcome.ErrorDialog
 import java.io.File
 
-// TODO break this dependency
-object DataStore {
-    var projectPath = "/Users/chetangupta/StudioProjects/GitTrends"
-    var isSingleModuleProject: Boolean = false
-    var errorMessage = ""
-    val baseActivityName: String
-        get() = packageNameBaseActivity.split(".").last()
-
-    var packageNameBaseActivity = "dev.ch8n.gittrends.ui.base.BaseActivity"
-
-    val selectedPath = mutableMapOf<String, File>()
-}
-
-
 class ConfigureProjectScreenNavigationComponent(
     private val componentContext: ComponentContext,
     private val toSelectModulesScreen: () -> Unit,
@@ -99,14 +85,14 @@ fun ConfigProjectScreenUI(projectPathViewModel: ProjectPathViewModel) {
             AppScaffold {
 
                 Text(
-                    text ="Configure Project",
+                    text = "Configure Project",
                     style = MaterialTheme.typography.h1,
                     color = White1
                 )
 
                 Spacer(modifier = Modifier.height(dp8))
 
-                Text(text ="Project path")
+                Text(text = "Project path")
 
                 TextField(
                     value = projectPathState,
@@ -167,30 +153,26 @@ fun ConfigProjectScreenUI(projectPathViewModel: ProjectPathViewModel) {
                     Timber.i("ProjectPath UI -> next clicked")
                     try {
                         projectPathViewModel.loadingState.value = true
-
                         if (projectTypeState == ProjectModuleType.MULTI) {
                             projectPathViewModel.loadingState.value = false
                             projectPathViewModel.errorState.value = errorState.copy(
                                 isVisible = true, message = "Multi-Module is Under Development"
                             )
                         } else {
-
-                            projectPathViewModel.validatePath(DataStore.projectPath) {
-                                projectPathViewModel.loadingState.value = false
-                                val module = when (projectTypeState) {
-                                    ProjectModuleType.SINGLE -> ProjectSetting.SingleModuleProject(
-                                        baseFolderOrModuleName.text,
-                                        projectPathState.text
-                                    )
-                                    ProjectModuleType.MULTI -> ProjectSetting.MultiModuleProject(
-                                        baseFolderOrModuleName.text,
-                                        projectPathState.text
-                                    )
-                                }
-
+                            val module = when (projectTypeState) {
+                                ProjectModuleType.SINGLE -> ProjectSetting.SingleModuleProject(
+                                    baseFolderOrModuleName.text,
+                                    projectPathState.text
+                                )
+                                ProjectModuleType.MULTI -> ProjectSetting.MultiModuleProject(
+                                    baseFolderOrModuleName.text,
+                                    projectPathState.text
+                                )
+                            }
+                            val singelModule = module as ProjectSetting.SingleModuleProject
+                            projectPathViewModel.validatePath(singelModule.projectPath) {
                                 AppDataStore.projectConfig = module
                                 projectPathViewModel.toSelectModulesScreen()
-
                             }
                         }
                     } catch (e: Exception) {

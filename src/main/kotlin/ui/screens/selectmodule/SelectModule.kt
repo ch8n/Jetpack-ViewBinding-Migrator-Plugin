@@ -22,9 +22,7 @@ import ui.component.FooterScaffold
 import ui.data.AppDataStore
 import ui.data.Error
 import ui.data.ProjectSetting
-import ui.screens.configproject.DataStore
 import ui.screens.welcome.ErrorDialog
-import ui.screens.welcome.WarningDialog
 import java.io.File
 
 
@@ -209,7 +207,8 @@ class SelectModuleViewModel(
     fun scanForModules() {
         viewModelScope.launch {
             Timber.d("SelectModuleViewModel -> scanning project for module")
-            val projectPath = DataStore.projectPath
+            val projectSetting = projectConfig as ProjectSetting.SingleModuleProject
+            val projectPath = projectSetting.projectPath
             val projectFile = File(projectPath)
             val mainPathFiles: List<File> = projectFile.walk()
                 .asSequence()
