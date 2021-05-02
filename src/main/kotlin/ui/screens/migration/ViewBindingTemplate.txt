@@ -23,6 +23,7 @@ abstract class ViewBindingActivity<VB : ViewBinding> : <ReplaceBaseName>() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // make sure your base class doesn't setContentView(...)
         _binding = bindingInflater.invoke(layoutInflater)
         setContentView(requireNotNull(_binding).root)
     }

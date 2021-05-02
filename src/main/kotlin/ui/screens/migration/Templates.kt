@@ -16,6 +16,7 @@ android {
      *  2. Minimum Gradle version should be `6.1.1` 
      *     i.e `gradle-wrapper.properties` should be minimum `distributionUrl=https\://services.gradle.org/distributions/gradle-6.1.1.zip`
      *  3. Sync project after migration complete
+     *  4. Make sure your base class doesn't setContentView(...)
      */
     
     buildFeatures.viewBinding = true
