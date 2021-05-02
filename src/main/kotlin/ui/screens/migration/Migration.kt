@@ -26,15 +26,19 @@ import kotlin.system.exitProcess
 fun main() {
     Preview {
         with(AppDataStore) {
-            projectConfig = ProjectSetting.SingleModuleProject("base", "/Users/chetangupta/StudioProjects/GitTrends")
+            projectConfig = ProjectSetting.SingleModuleProject("base", "/Users/chetangupta/StudioProjects/ColorChetan")
             selectedModule.apply {
-                put("app", File("/Users/chetangupta/StudioProjects/GitTrends/app/src/main"))
+                put("app", File("/Users/chetangupta/StudioProjects/ColorChetan/app/src/main"))
             }
             migrateComponent.apply {
-                put(Component.Activities, ComponentConfig.ActivityConfig(LayoutIdsFormat.UnderScoreCase, "BaseActivity"))
+                put(
+                    Component.Activities,
+                    ComponentConfig.ActivityConfig(LayoutIdsFormat.UnderScoreCase, "AppCompatActivity")
+                )
             }
         }
-        val testVM = MigrationViewModel({})
+        val testVM = MigrationViewModel({}, {})
+        testVM.onFinish = { testVM.startMigration() }
         MigrationScreenUI(testVM)
     }
 }
@@ -46,8 +50,12 @@ class MigrationScreenNavigationComponent(
 ) : NavigationComponent, ComponentContext by componentContext {
 
     private val migrationViewModel by lazy {
+        val onFinish = {
+            exitProcess(0)
+        }
         MigrationViewModel(
-            onBackClicked
+            onBackClicked,
+            onFinish
         )
     }
 
@@ -162,10 +170,9 @@ fun MigrationScreenUI(migrationViewModel: MigrationViewModel) {
                     ),
                     onClick = {
                         println("Migrate UI -> finish clicked")
-                        //migrationViewModel.startMigration()
-                        exitProcess(0)
+                        migrationViewModel.onFinish()
                     },
-                    enabled = migrationProgress >= 1f
+                    //enabled = migrationProgress >= 1f
                 ) {
                     Text("Finish", color = White1)
                 }
@@ -177,7 +184,8 @@ fun MigrationScreenUI(migrationViewModel: MigrationViewModel) {
 
 
 class MigrationViewModel(
-    val onBackClicked: () -> Unit
+    val onBackClicked: () -> Unit,
+    var onFinish: () -> Unit
 ) : ViewModel() {
 
     private val projectConfig = AppDataStore.projectConfig as ProjectSetting.SingleModuleProject
@@ -255,19 +263,27 @@ class MigrationViewModel(
 
         val baseFolderName = projectConfig.baseFolderName
 
-        val viewBinderBaseFile = moduleFile.walk()
+        var viewBinderBaseFolder = moduleFile.walk()
             .firstOrNull { it.name.contains(baseFolderName) }
-            ?: File("$moduleRoot/$baseFolderName")
 
-        if (!viewBinderBaseFile.exists()) {
-            println("viewBinderBaseFile not existing so created")
-            viewBinderBaseFile.mkdir()
+        val isCustomBaseActivityFound = viewBinderBaseFolder != null
+        if (!isCustomBaseActivityFound) {
+
+            viewBinderBaseFolder = File("${moduleRoot}/$baseFolderName")
+
+            if (!viewBinderBaseFolder.exists()) {
+                println("viewBinderBaseFile not existing so created")
+                viewBinderBaseFolder.mkdir()
+            }
+
         }
 
         val wizardRoot = File(Path.of("").toAbsolutePath().toString())
 
-        val viewBindingTemplate = wizardRoot.walk().asSequence()
+        val viewBindingTemplate = wizardRoot.walk()
             .firstOrNull { it.name.contains("ViewBindingTemplate.txt") }
+
+        println("viewBinder template path: $viewBindingTemplate")
 
         if (viewBindingTemplate?.exists() == false) {
             println("MigrationViewModel -> ViewBindingTemplate not found in project \n ${viewBindingTemplate.path}")
@@ -282,21 +298,29 @@ class MigrationViewModel(
 
         val activityConfig = componentConfig.get(Component.Activities) as ComponentConfig.ActivityConfig
         val baseActivityName = activityConfig.baseActivityName
-        val baseActivityFile = moduleFile.walk().first { it.name.contains(baseActivityName) }
+
+        val baseActivityFile = if (isCustomBaseActivityFound) {
+            moduleFile.walk().firstOrNull { it.name.contains(baseActivityName) }
+        } else {
+            moduleFile.walk().filter { !it.isDirectory && it.path.contains(".kt") }.firstOrNull {
+                it.readText().contains(activityConfig.baseActivityName)
+            }
+        }?: throw IllegalStateException("ch8n baseActivityFile not found...")
+
         val basePackageName = baseActivityFile
             .readLines()
             .first { it.contains("package") }
             .split(" ")
-            .getOrNull(1)?:""
+            .getOrNull(1) ?: ""
 
         println(basePackageName)
 
         val basePackagesTemplate = templateContent
-            .replace("<ReplacePackageName>", basePackageName)
-            .replace("<ReplaceBasePackage>", "$basePackageName.$baseActivityName")
+            .replace("<ReplacePackageName>",if (isCustomBaseActivityFound) basePackageName else "$basePackageName.${baseFolderName}")
+            .replace("<ReplaceBasePackage>", if (isCustomBaseActivityFound) "$basePackageName.$baseActivityName" else "androidx.appcompat.app.AppCompatActivity")
             .replace("<ReplaceBaseName>", baseActivityName)
 
-        val viewBindingBaseClassFile = File("${viewBinderBaseFile.path}/ViewBindingActivity.kt")
+        val viewBindingBaseClassFile = File("${requireNotNull(viewBinderBaseFolder).path}/ViewBindingActivity.kt")
 
         if (!viewBindingBaseClassFile.exists()) {
             viewBindingBaseClassFile.bufferedWriter().use { out ->
@@ -351,7 +375,7 @@ class MigrationViewModel(
         println(allResourceIds.toList())
         println("-----------allResourceIds--------------end")
         val activityConfig = componentConfig.get(Component.Activities) as ComponentConfig.ActivityConfig
-        val bindingIds = when(activityConfig.layoutIdFormat){
+        val bindingIds = when (activityConfig.layoutIdFormat) {
             LayoutIdsFormat.CamelCase -> allResourceIds.map { id -> id to id }.toMap()
             LayoutIdsFormat.UnderScoreCase -> allResourceIds.map { id ->
                 val words = id.split("_")
@@ -388,7 +412,7 @@ class MigrationViewModel(
         val activityConfig = componentConfig.get(Component.Activities) as ComponentConfig.ActivityConfig
         val activities = root.walk().asSequence()
             .filter { it.name.contains(".kt") }
-            .filter { !it.path.contains("base") }
+            .filter { !it.path.contains(projectConfig.baseFolderName) }
             .filter { it.readText().contains("${activityConfig.baseActivityName}()") }
             .toList()
             .also {
@@ -399,7 +423,8 @@ class MigrationViewModel(
             .filter { !it.readText().contains("ViewBindingActivity<") }
             .onEach { activity ->
                 val (_, bindingClassName) = getBindClassName(activity)
-                val activityContentWithImports = modifyActivityImportsForViewBinding(activity, bindingClassName,moduleFile)
+                val activityContentWithImports =
+                    modifyActivityImportsForViewBinding(activity, bindingClassName, moduleFile)
                 val activityContentWithViewBinder =
                     modifySuperClassOfActivity(activityContentWithImports, bindingClassName)
                 val activityContextWithBindings = modifyActivityLayoutIds(activityContentWithViewBinder, ids)
@@ -413,7 +438,7 @@ class MigrationViewModel(
         val activityContent = activity.readText()
         val activityLines = activityContent.lines()
         val layoutLine = activityLines.first { it.contains("R.layout") }
-        val layoutName = layoutLine.split(".").last()
+        val layoutName = layoutLine.split(".").last().dropLast(1)
         println("MigrationViewModel -> layoutName $layoutName")
 
         val viewBindingClassName = layoutName.split("_")
@@ -432,7 +457,11 @@ class MigrationViewModel(
         return packageName
     }
 
-    private fun modifyActivityImportsForViewBinding(activity: File, bindingClassName: String, moduleFile: File): String {
+    private fun modifyActivityImportsForViewBinding(
+        activity: File,
+        bindingClassName: String,
+        moduleFile: File
+    ): String {
         val activityContent = activity.readText()
         val activityLines = activityContent.lines().toMutableList()
 
@@ -440,19 +469,18 @@ class MigrationViewModel(
             it.contains("kotlinx.android.synthetic")
         }
 
-        val activityConfig = componentConfig.get(Component.Activities) as ComponentConfig.ActivityConfig
-        val baseActivityName = activityConfig.baseActivityName
-        val baseActivityFile = moduleFile.walk().first { it.name.contains(baseActivityName) }
+        val baseActivityFile = moduleFile.walk().first { it.name.contains("ViewBindingActivity") }
         val basePackageName = baseActivityFile
             .readLines()
             .first { it.contains("package") }
             .split(" ")
-            .getOrNull(1)?:""
+            .getOrNull(1) ?: ""
 
         println(basePackageName)
 
         val activityPackageName = getActivityPackageName(activity).split(".").take(3).joinToString(".")
-        val importTemplate = Templates.getViewBindingImportsForActivity(basePackageName,activityPackageName, bindingClassName)
+        val importTemplate =
+            Templates.getViewBindingImportsForActivity(basePackageName, activityPackageName, bindingClassName)
 
         // add imports for viewbinding
         activityLines.add(syntheticImportIndex, importTemplate)
