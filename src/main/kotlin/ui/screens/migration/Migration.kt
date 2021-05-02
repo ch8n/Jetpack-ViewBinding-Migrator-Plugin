@@ -20,6 +20,7 @@ import ui.data.*
 import java.io.File
 import java.io.FileWriter
 import java.nio.file.Path
+import kotlin.system.exitProcess
 
 
 fun main() {
@@ -30,7 +31,7 @@ fun main() {
                 put("app", File("/Users/chetangupta/StudioProjects/GitTrends/app/src/main"))
             }
             migrateComponent.apply {
-                put(Component.Activities, ComponentConfig.ActivityConfig(LayoutIdsFormat.CamelCase, "BaseActivity"))
+                put(Component.Activities, ComponentConfig.ActivityConfig(LayoutIdsFormat.UnderScoreCase, "BaseActivity"))
             }
         }
         val testVM = MigrationViewModel({})
@@ -161,12 +162,12 @@ fun MigrationScreenUI(migrationViewModel: MigrationViewModel) {
                     ),
                     onClick = {
                         println("Migrate UI -> finish clicked")
-                        migrationViewModel.startMigration()
-                        //exitProcess(0)
+                        //migrationViewModel.startMigration()
+                        exitProcess(0)
                     },
-                    //enabled = migrationProgress >= 1f
+                    enabled = migrationProgress >= 1f
                 ) {
-                    Text("Start", color = White1)
+                    Text("Finish", color = White1)
                 }
             }
 
@@ -197,10 +198,10 @@ class MigrationViewModel(
             .also { println("--------completed addBaseClassOnModule--------") }
             .map(::parseResourceIds)
             .also { println("--------completed parseResourceIds--------") }
-//            .onEach { (moduleFile, ids) -> migrateActivityIds(moduleFile, ids) }
-//            .also { println("completed migrateActivityIds") }
-//            .onEach { progressBarState.value = progressBarState.value + progressStep }
-//            .also { println("completed progressBarState ${progressBarState.value}") }
+            .onEach { (moduleFile, ids) -> migrateActivityIds(moduleFile, ids) }
+            .also { println("completed migrateActivityIds") }
+            .onEach { progressBarState.value = progressBarState.value + progressStep }
+            .also { println("completed progressBarState ${progressBarState.value}") }
     }
 
     private fun addGradleDependency(moduleFile: File) {
@@ -330,6 +331,7 @@ class MigrationViewModel(
     }
 
     private fun parseResourceIds(moduleFile: File): Pair<File, Map<String, String>> {
+        // TODO continue working
         println("MigrationViewModel -> parseResourceIds \n ${moduleFile.path}")
 
         val resourcesFiles = File("${moduleFile.path}/res/layout")
@@ -345,12 +347,25 @@ class MigrationViewModel(
             .map { it.split("android:id=\"@+id/")[1].dropLast(1).trim() }
 
         // todo figure out other popular conventions?
-        val bindingIds = allResourceIds.map { id ->
-            val words = id.split("_")
-            val first = words.take(1)
-            val others = words.drop(1).map { it.capitalize() }
-            id to (first + others).joinToString(separator = "")
-        }.toMap()
+        println("-----------allResourceIds")
+        println(allResourceIds.toList())
+        println("-----------allResourceIds--------------end")
+        val activityConfig = componentConfig.get(Component.Activities) as ComponentConfig.ActivityConfig
+        val bindingIds = when(activityConfig.layoutIdFormat){
+            LayoutIdsFormat.CamelCase -> allResourceIds.map { id -> id to id }.toMap()
+            LayoutIdsFormat.UnderScoreCase -> allResourceIds.map { id ->
+                val words = id.split("_")
+                val first = words.take(1)
+                val others = words.drop(1).map { it.capitalize() }
+                id to (first + others).joinToString(separator = "")
+            }.toMap()
+            LayoutIdsFormat.KebabCase -> allResourceIds.map { id ->
+                val words = id.split("-")
+                val first = words.take(1)
+                val others = words.drop(1).map { it.capitalize() }
+                id to (first + others).joinToString(separator = "")
+            }.toMap()
+        }
 
         logMessageState.value = "${logMessageState.value}\n${moduleFile.name} | parsed binding ids"
         println("MigrationViewModel -> allResourceIds \n ${allResourceIds.joinToString("\n")}")
@@ -384,7 +399,7 @@ class MigrationViewModel(
             .filter { !it.readText().contains("ViewBindingActivity<") }
             .onEach { activity ->
                 val (_, bindingClassName) = getBindClassName(activity)
-                val activityContentWithImports = modifyActivityImportsForViewBinding(activity, bindingClassName)
+                val activityContentWithImports = modifyActivityImportsForViewBinding(activity, bindingClassName,moduleFile)
                 val activityContentWithViewBinder =
                     modifySuperClassOfActivity(activityContentWithImports, bindingClassName)
                 val activityContextWithBindings = modifyActivityLayoutIds(activityContentWithViewBinder, ids)
@@ -417,7 +432,7 @@ class MigrationViewModel(
         return packageName
     }
 
-    private fun modifyActivityImportsForViewBinding(activity: File, bindingClassName: String): String {
+    private fun modifyActivityImportsForViewBinding(activity: File, bindingClassName: String, moduleFile: File): String {
         val activityContent = activity.readText()
         val activityLines = activityContent.lines().toMutableList()
 
@@ -425,8 +440,19 @@ class MigrationViewModel(
             it.contains("kotlinx.android.synthetic")
         }
 
+        val activityConfig = componentConfig.get(Component.Activities) as ComponentConfig.ActivityConfig
+        val baseActivityName = activityConfig.baseActivityName
+        val baseActivityFile = moduleFile.walk().first { it.name.contains(baseActivityName) }
+        val basePackageName = baseActivityFile
+            .readLines()
+            .first { it.contains("package") }
+            .split(" ")
+            .getOrNull(1)?:""
+
+        println(basePackageName)
+
         val activityPackageName = getActivityPackageName(activity).split(".").take(3).joinToString(".")
-        val importTemplate = Templates.getViewBindingImportsForActivity(activityPackageName, bindingClassName)
+        val importTemplate = Templates.getViewBindingImportsForActivity(basePackageName,activityPackageName, bindingClassName)
 
         // add imports for viewbinding
         activityLines.add(syntheticImportIndex, importTemplate)

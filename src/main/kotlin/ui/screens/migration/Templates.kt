@@ -28,9 +28,9 @@ android {
         return "package ${packageName}\n\n${codeContent}"
     }
 
-    fun getViewBindingImportsForActivity(activityPackageName: String, bindingClassName: String): String {
+    fun getViewBindingImportsForActivity(basePackageName:String,activityPackageName: String, bindingClassName: String): String {
         return """
-        import $activityPackageName.base.ViewBindingActivity
+        import $basePackageName.ViewBindingActivity
         import$activityPackageName.databinding.$bindingClassName
         import android.view.LayoutInflater
         """.trimIndent()
