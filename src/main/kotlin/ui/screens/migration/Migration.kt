@@ -155,7 +155,7 @@ fun MigrationScreenUI(migrationViewModel: MigrationViewModel) {
                     ),
                     onClick = { },
                 ) {
-                    Text("Buy me a coffee?", color = Color.Black)
+                    Text("Support the project?", color = Color.Black)
                 }
 
                 val migrationProgress: Float by migrationViewModel.progressBarState.collectAsState()

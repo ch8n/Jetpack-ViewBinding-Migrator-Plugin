@@ -89,7 +89,7 @@ fun FooterScaffold(
             ),
             onClick = onBuyCoffeeClicked,
         ) {
-            Text("Buy me a coffee?", color = Color.Black)
+            Text("Support the project?", color = Color.Black)
         }
 
         Row {

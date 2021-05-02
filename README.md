@@ -4,6 +4,10 @@ An Jetpack compose desktop app to Migrate synthetic imports to Jetpack Viewbindi
 # WireFrames 
 https://www.figma.com/file/KmQIjraCTA3STWIQLhMqcL/View-Binder-Wizard?node-id=0%3A1
 
+# Build Project
+1. Checkout main using git in intellij  
+2. Gradle tab > Tasks > Compose Desktop > run 
+
 #TODO
 
 - Features
