@@ -3,8 +3,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
-    kotlin("jvm") version "1.4.32"
-    id("org.jetbrains.compose") version "0.4.0-build180"
+    kotlin("jvm")
+    id("org.jetbrains.compose")
+
 }
 
 group = "ch8n.androidbites.viewbinder"
@@ -18,14 +19,14 @@ repositories {
 
 dependencies {
     implementation(compose.desktop.currentOs)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:_")
     implementation(kotlin("reflect"))
     // Decompose : Decompose
-    implementation("com.arkivanov.decompose:decompose:0.2.1")
-    implementation("com.arkivanov.decompose:extensions-compose-jetbrains:0.2.1")
+    implementation("com.arkivanov.decompose:decompose:_")
+    implementation("com.arkivanov.decompose:extensions-compose-jetbrains:_")
 
     // Logging
-    implementation("com.ToxicBakery.logging:arbor-jvm:1.35.72")
+    implementation("com.ToxicBakery.logging:arbor-jvm:_")
 }
 
 tasks.withType<KotlinCompile>() {
